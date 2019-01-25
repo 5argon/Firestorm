@@ -1,0 +1,8 @@
+{
+    "name": "com.e7.firestorm",
+    "author": "Sirawat Pitaksarit / 5argon - Exceed7 Experiments",
+    "displayName": "Firestorm",
+    "version": "1.0.0",
+    "unity": "2018.1",
+    "description": "Uses Cloud Firestore from Unity early while waiting for the official Unity SDK support from Firebase."
+}

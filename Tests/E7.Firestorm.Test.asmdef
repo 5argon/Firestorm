@@ -1,0 +1,19 @@
+{
+    "name": "E7.Firestorm.Test",
+    "references": [
+        "GUID:2457444df4efd46b0bfcc781cc9cb13f"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}
