@@ -1,7 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Networking;
 
 [CreateAssetMenu(menuName = Firestorm.assetMenuName + nameof(FirestormConfig))]
-public class FirestormConfig : ScriptableObject
+public partial class FirestormConfig : ScriptableObject
 {
     private static FirestormConfig instance;
 
@@ -24,13 +30,33 @@ public class FirestormConfig : ScriptableObject
         }
     }
 
+#pragma warning disable 0649
+    [SerializeField] private string projectId;
+#pragma warning restore 0649
+
+    /// <summary>
+    /// See your Project ID in Settings page, it is not your project name.
+    /// </summary>
+    public string ProjectID => projectId;
+
+    /// <summary>
+    /// The REST API url up to ".../documents", then you add one more slash and continue building the url.
+    /// You could do REST API in [this category](https://firebase.google.com/docs/firestore/reference/rest/?authuser=1#rest-resource-v1beta1projectsdatabasesdocuments) with this.
+    /// </summary>
+    public string RestDocumentBasePath => $"{Firestorm.restApiBaseUrl}/projects/{ProjectID}/databases/(default)/documents";
+
 //For play mode test ON THE REAL DEVICE the DEVELOPMENT_BUILD will be on
 //You will be able to use service account on those tests.
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+
+#pragma warning disable 0649
     /// <summary>
     /// DO NOT commit this file to public repository!
     /// </summary>
     public TextAsset serviceAccountPrivateKey;
+    public string superUserEmail;
+    public string superUserPassword;
+#pragma warning restore 0649
 
     public ServiceAccountPrivateKey ServiceAccountPrivateKey
     {
@@ -43,6 +69,8 @@ public class FirestormConfig : ScriptableObject
             return JsonUtility.FromJson<ServiceAccountPrivateKey>(serviceAccountPrivateKey.text);
         }
     }
-#endif
 
+#endif
 }
+
+

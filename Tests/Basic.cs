@@ -4,12 +4,21 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.TestTools;
 
 namespace FirestormTests
 {
     public static class TaskExtension
     {
+        public static async Task WaitAsync(this UnityWebRequestAsyncOperation uwr)
+        {
+            while(uwr.isDone == false)
+            {
+                await Task.Yield();
+            }
+        }
+
         public static IEnumerator YieldWait(this Task task)
         {
             while (task.IsCompleted == false)
