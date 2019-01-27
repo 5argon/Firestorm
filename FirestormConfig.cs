@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Firebase.Auth;
 using UnityEngine;
 using UnityEngine.Networking;
+
 
 [CreateAssetMenu(menuName = Firestorm.assetMenuName + nameof(FirestormConfig))]
 public partial class FirestormConfig : ScriptableObject
@@ -40,10 +42,52 @@ public partial class FirestormConfig : ScriptableObject
     public string ProjectID => projectId;
 
     /// <summary>
-    /// The REST API url up to ".../documents", then you add one more slash and continue building the url.
+    /// The REST API url up to ".../documents", then you add one more slash or colon and continue building the url.
     /// You could do REST API in [this category](https://firebase.google.com/docs/firestore/reference/rest/?authuser=1#rest-resource-v1beta1projectsdatabasesdocuments) with this.
     /// </summary>
     public string RestDocumentBasePath => $"{Firestorm.restApiBaseUrl}/projects/{ProjectID}/databases/(default)/documents";
+
+    /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
+    public async Task<UnityWebRequest> UWRGet(string path)
+    {
+        UnityWebRequest uwr = UnityWebRequest.Get($"{FirestormConfig.Instance.RestDocumentBasePath}{path}");
+        return await SetupAndSendUWRAsync(uwr);
+    }
+
+    /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
+    public async Task<UnityWebRequest> UWRPost(string path, Dictionary<string, string> postData)
+    {
+        UnityWebRequest uwr = UnityWebRequest.Post($"{FirestormConfig.Instance.RestDocumentBasePath}{path}", postData);
+        return await SetupAndSendUWRAsync(uwr);
+    }
+
+    /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
+    public async Task<UnityWebRequest> UWRGet(string path, byte[] bodyData)
+    {
+        UnityWebRequest uwr = UnityWebRequest.Put($"{FirestormConfig.Instance.RestDocumentBasePath}{path}", bodyData);
+        return await SetupAndSendUWRAsync(uwr);
+    }
+
+    /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
+    public async Task<UnityWebRequest> UWRDelete(string path)
+    {
+        UnityWebRequest uwr = UnityWebRequest.Delete($"{FirestormConfig.Instance.RestDocumentBasePath}{path}");
+        return await SetupAndSendUWRAsync(uwr);
+    }
+
+    /// <summary>
+    /// Put the login token in the REST request
+    /// </summary>
+    private async Task<UnityWebRequest> SetupAndSendUWRAsync(UnityWebRequest uwr)
+    {
+        var token = await FirebaseAuth.DefaultInstance.CurrentUser.TokenAsync(forceRefresh: true);
+        uwr.SetRequestHeader("Authorization", $"Bearer {token}");
+        Debug.Log($"Sending {uwr.uri} {uwr.url}");
+        var ao = uwr.SendWebRequest();
+        await ao.WaitAsync();
+        Debug.Log($"Done! {ao.webRequest.isDone} {ao.webRequest.isHttpError} {ao.webRequest.isNetworkError} {ao.webRequest.error} {ao.webRequest.downloadHandler.text}");
+        return ao.webRequest;
+    }
 
 //For play mode test ON THE REAL DEVICE the DEVELOPMENT_BUILD will be on
 //You will be able to use service account on those tests.

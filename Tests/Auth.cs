@@ -15,18 +15,11 @@ namespace FirestormTests
         {
             yield return T().YieldWait(); async Task T()
             {
-                var config = FirestormConfig.Instance;
-                FirebaseUser fu = await FirebaseAuth.DefaultInstance.SignInWithEmailAndPasswordAsync(config.superUserEmail, config.superUserPassword);
-                var token = await fu.TokenAsync(forceRefresh: false);
-                Debug.Log($"Token {token}");
-
-                UnityWebRequest uwr = UnityWebRequest.Get($"{FirestormConfig.Instance.RestDocumentBasePath}/my-collection");
-                uwr.SetRequestHeader("Authorization",$"Bearer {token}");
-                Debug.Log($"Sending {uwr.uri} {uwr.url}");
-                var ao = uwr.SendWebRequest();
-                await ao.WaitAsync();
-                Debug.Log($"Done! {ao.webRequest.isDone} {ao.webRequest.isHttpError} {ao.webRequest.isNetworkError} {ao.webRequest.error} {ao.webRequest.downloadHandler.text}");
-                Assert.That(ao.webRequest.isHttpError, Is.Not.True, ao.webRequest.error);
+                await EnsureSuperUserAccountCreated();
+                await SignInSuperUser();
+                var uwr = await FirestormConfig.Instance.UWRGet("/my-collection");
+                Debug.Log($"{uwr.downloadHandler.text}");
+                Assert.That(uwr.isHttpError, Is.Not.True, uwr.error);
             }
         }
 

@@ -1,45 +1,67 @@
 # Firestorm 
 
-Adopt Cloud Firestore early!
+Adopt Cloud Firestore early on Unity with pure REST API. Contains only basic functions.
 
 ## Why
 
 - Cloud Firestore is described as better than Readtime Database in every way, except that it is in beta and no Unity SDK yet.
 - Decision to use Realtime Database or Firestore is a big forked path, since it affects the way you would design as hierarchy (Firestore) or flat with data duplications (RDB). There is probably 0% chance of easy migration. Unity devs will be faced with difficult decision of using RDB now and wait for SDK then having to overhaul design and migrate database, or just use Firestore with Firestorm while waiting for official SDK.
-- The Unity SDK will likely be a packed DLL like it currently is at present. This had given me multiple headache where I could not fix the problem by myself without access to source code especially when upgrading to beta/alpha Unity build. Firestorm will be completely independent from Firebase Unity SDK, including the auth part before it can use Firestore.
-- It does not cover anything other than Auth and Firestore. If you want to do Auth to Storage/Cloud Functions/etc. please just use the Unity SDK to auth again separately.
-- Because it maintains only compatibility of Auth and Firestore maybe it is easier and faster to adopt a new Firestore feature added by Google.
 
 ## Approach
 
-- Request service account credential with [Google.Apis.Auth](https://www.nuget.org/packages/Google.Apis.Auth/)
-- Or request user's credential by REST on the Firebase Auth.
-- Use the C# Nuget package [Google.Apis.Firestore](https://www.nuget.org/packages/Google.Apis.Firestore.v1beta2/)
-- Use either credential for REST on the Firebase Cloud Firestore.
-- REST is bridged to you via `UnityWebRequest` so that the REST request works on all platform as Unity promised **hopefully**.
-- Wrap all `UnityWebRequest` in a better C# `async` methods that feels nice to use.
-
+- Use the currently available Unity Firebase SDK Auth to login before performing any Firestorm call.
+- Firestorm will check on `FirebaseAuth.DefaultInstance.CurrentUser` and do `TokenAsync()`.
+- The token will be an input to `Firestorm` to perform REST API call to Cloud Firestore.
+- REST API performed by `UnityWebRequest`, which hopefully Unity will take care so it works with all platforms.
+- There is nothing related to service account. I don't want to add external dependency to the FirebaseAdmin package.
+- The Firestorm API is designed to be close to C# Firestore API so that the transition to the real thing is not painful when it arrives.
 
 ## Requires
+
 - Unity 2019.1 (may work with 2018.3 but I have enough time to care about backward compatibility sorry..)
 - C# 7.3
+- Firebase Unity SDK : Auth
 
-### Needed in your Plugins folder
+## Not supported
 
-To get all related Nuget packages do :
+- Transaction
+- Batched write
+- Ordering
+- Limiting
+- Listening for realtime updates
+- Query cursor/pagination
+- Offline data
+- Managing index
 
+Let's wait for the Unity SDK for those. (They are already all supported in regular C# Firestore SDK)
 
-I will not include external `dll` in this repo, since you might already have them to work with other code in your Unity project. It will conflict easily if this repo was to be pulled into Unity as a package.
+## Available REST functions 
 
-- Google.Apis
-- Google.Apis.Auth
-- Google.Apis.Core
-- Google.Apis.Firestore.v1beta2
-- Newtonsoft.Json
+See here : https://firebase.google.com/docs/firestore/reference/rest/
 
-## Test
+exportDocuments	POST /v1beta1/{name=projects/*/databases/*}:exportDocuments 
+importDocuments	POST /v1beta1/{name=projects/*/databases/*}:importDocuments 
 
-Both unit test (run in editor) and play mode test (able to build and run on the device) are included. They will use internet and a Cloud Firestore database you have to setup for the test to work on and it will cost your bill! It will test using both service account and faked user account. (Which is registered using service account)
+batchGet	POST /v1beta1/{database=projects/*/databases/*}/documents:batchGet 
+beginTransaction	POST /v1beta1/{database=projects/*/databases/*}/documents:beginTransaction 
+commit	POST /v1beta1/{database=projects/*/databases/*}/documents:commit 
+createDocument	POST /v1beta1/{parent=projects/*/databases/*/documents/**}/{collectionId} 
+delete	DELETE /v1beta1/{name=projects/*/databases/*/documents/*/**} 
+get	GET /v1beta1/{name=projects/*/databases/*/documents/*/**} 
+list	GET /v1beta1/{parent=projects/*/databases/*/documents/*/**}/{collectionId} 
+list	GET /v1beta1/{parent=projects/*/databases/*/documents/*/**}/{collectionId} 
+patch	PATCH /v1beta1/{document.name=projects/*/databases/*/documents/*/**} 
+rollback	POST /v1beta1/{database=projects/*/databases/*}/documents:rollback 
+runQuery	POST /v1beta1/{parent=projects/*/databases/*/documents}:runQuery 
+write	POST /v1beta1/{database=projects/*/databases/*}/documents:write 
+
+create	POST /v1beta1/{parent=projects/*/databases/*}/indexes 
+delete	DELETE /v1beta1/{name=projects/*/databases/*/indexes/*} 
+get	GET /v1beta1/{name=projects/*/databases/*/indexes/*} 
+list	GET /v1beta1/{parent=projects/*/databases/*}/indexes 
+
+This repo is just enough to continue working on a game so yeah.. that's all I want in my game. 
+(For example I didn't even implement delete. My game is not possible to delete data.)
 
 ## "Oh no REST sucks, why don't you use gRPC?"
 

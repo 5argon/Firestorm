@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -9,51 +8,6 @@ using UnityEngine.TestTools;
 
 namespace FirestormTests
 {
-    public static class TaskExtension
-    {
-        public static async Task WaitAsync(this UnityWebRequestAsyncOperation uwr)
-        {
-            while(uwr.isDone == false)
-            {
-                await Task.Yield();
-            }
-        }
-
-        public static IEnumerator YieldWait(this Task task)
-        {
-            while (task.IsCompleted == false)
-            {
-                yield return null;
-            }
-            if (task.Status == TaskStatus.Faulted)
-            {
-                throw task.Exception;
-            }
-        }
-
-        public static IEnumerator YieldWaitExpectException<T>(this Task task) where T : Exception
-        {
-            while (task.IsCompleted == false)
-            {
-                yield return null;
-            }
-            if (task.Status == TaskStatus.Faulted)
-            {
-                Type failType = task.Exception.InnerException.GetType();
-                if (failType == typeof(T))
-                {
-                }
-                else
-                {
-                    Assert.Fail($"The task fail with exception of type {failType} instead of {typeof(T).Name}");
-                }
-            }
-            else
-            {
-                Assert.Fail($"The task didn't fail with exception of type {typeof(T).Name}");
-            }
-        }
-    }
 
     public class Basic
     {

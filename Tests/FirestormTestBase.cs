@@ -9,16 +9,16 @@ namespace FirestormTests
 {
     public class FirestormTestBase
     {
-        [UnitySetUp]
-        public IEnumerator EnsureAllTestAccounts()
+        protected async Task EnsureSuperUserAccountCreated()
         {
-            yield return T().YieldWait(); async Task T()
-            {
-                var config = FirestormConfig.Instance;
-                await EnsureUserCreated(config.superUserEmail, config.superUserPassword);
-                await EnsureUserCreated(Firestorm.testUserEmail1, Firestorm.testUserPassword1);
-                await EnsureUserCreated(Firestorm.testUserEmail2, Firestorm.testUserPassword2);
-            }
+            var config = FirestormConfig.Instance;
+            await EnsureUserCreated(config.superUserEmail, config.superUserPassword);
+        }
+
+        protected async Task SignInSuperUser()
+        {
+            var config = FirestormConfig.Instance;
+            FirebaseUser fu = await FirebaseAuth.DefaultInstance.SignInWithEmailAndPasswordAsync(config.superUserEmail, config.superUserPassword);
         }
 
         private async Task EnsureUserCreated(string email, string password)
