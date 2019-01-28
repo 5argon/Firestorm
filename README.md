@@ -1,29 +1,36 @@
 # Firestorm 
 
-Adopt Cloud Firestore early on Unity with pure REST API. Contains only basic functions.
+Makeshift Cloud Firestore C# API that works on Unity via pure REST API. Contains only basic functions.
 
-## Why
+## Why Cloud Firestore
 
 - Cloud Firestore is described as better than Readtime Database in every way, except that it is in beta and no Unity SDK yet.
 - Decision to use Realtime Database or Firestore is a big forked path, since it affects the way you would design as hierarchy (Firestore) or flat with data duplications (RDB). There is probably 0% chance of easy migration. Unity devs will be faced with difficult decision of using RDB now and wait for SDK then having to overhaul design and migrate database, or just use Firestore with Firestorm while waiting for official SDK.
+- The official C# Firestore API is available but Unity is not good with Nuget + it pulls in tons of dependencies that likely cause problem later. Firestorm puts all the work to `UnityWebRequest` to do REST call to ensure compatibility.
 
 ## Approach
 
 - Use the currently available Unity Firebase SDK Auth to login before performing any Firestorm call.
 - Firestorm will check on `FirebaseAuth.DefaultInstance.CurrentUser` and do `TokenAsync()`.
-- The token will be an input to `Firestorm` to perform REST API call to Cloud Firestore.
+- The token will be an input to perform REST API call to Cloud Firestore.
 - REST API performed by `UnityWebRequest`, which hopefully Unity will take care so it works with all platforms.
 - There is nothing related to service account. I don't want to add external dependency to the FirebaseAdmin package.
-- The Firestorm API is designed to be close to C# Firestore API so that the transition to the real thing is not painful when it arrives.
+- The Firestorm API is designed to roughly resemble C# Firestore API so that the transition to the real thing is not painful when it arrives.
 
 ## Requires
 
 - Unity 2019.1 (may work with 2018.3 but I have enough time to care about backward compatibility sorry..)
 - C# 7.3
 - Firebase Unity SDK : Auth
+- Newtonsoft.Json
+
+## Why not Unity's JsonUtility
+
+It sucks! The JSON from Firestore has polymorphic union fields (see [example](https://firebase.google.com/docs/firestore/reference/rest/v1beta1/Value)) and it is impossible to work with without at least JSON to `Dictionary` support to put the field names as dict key then do reflections etc.
 
 ## Not supported
 
+- Type excluded in a document : Map, Geopoint (LatLng), bytes (use base-64 string instead), any mentioned types that is in an array.
 - Transaction
 - Batched write
 - Ordering
@@ -32,6 +39,7 @@ Adopt Cloud Firestore early on Unity with pure REST API. Contains only basic fun
 - Query cursor/pagination
 - Offline data
 - Managing index
+- Import/export data
 
 Let's wait for the Unity SDK for those. (They are already all supported in regular C# Firestore SDK)
 

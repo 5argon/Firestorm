@@ -48,35 +48,36 @@ public partial class FirestormConfig : ScriptableObject
     public string RestDocumentBasePath => $"{Firestorm.restApiBaseUrl}/projects/{ProjectID}/databases/(default)/documents";
 
     /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
-    public async Task<UnityWebRequest> UWRGet(string path)
+    internal async Task<UnityWebRequest> UWRGet(string path)
     {
         UnityWebRequest uwr = UnityWebRequest.Get($"{FirestormConfig.Instance.RestDocumentBasePath}{path}");
         return await SetupAndSendUWRAsync(uwr);
     }
 
     /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
-    public async Task<UnityWebRequest> UWRPost(string path, Dictionary<string, string> postData)
+    internal async Task<UnityWebRequest> UWRPost(string path, Dictionary<string, string> postData)
     {
         UnityWebRequest uwr = UnityWebRequest.Post($"{FirestormConfig.Instance.RestDocumentBasePath}{path}", postData);
         return await SetupAndSendUWRAsync(uwr);
     }
 
     /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
-    public async Task<UnityWebRequest> UWRGet(string path, byte[] bodyData)
+    internal async Task<UnityWebRequest> UWRPut(string path, byte[] bodyData)
     {
         UnityWebRequest uwr = UnityWebRequest.Put($"{FirestormConfig.Instance.RestDocumentBasePath}{path}", bodyData);
         return await SetupAndSendUWRAsync(uwr);
     }
 
     /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
-    public async Task<UnityWebRequest> UWRDelete(string path)
+    internal async Task<UnityWebRequest> UWRDelete(string path)
     {
+        Debug.Log($"Deleting {FirestormConfig.Instance.RestDocumentBasePath}{path}");
         UnityWebRequest uwr = UnityWebRequest.Delete($"{FirestormConfig.Instance.RestDocumentBasePath}{path}");
         return await SetupAndSendUWRAsync(uwr);
     }
 
     /// <summary>
-    /// Put the login token in the REST request
+    /// Put the login token in the REST request. This waits for the request's reponse completely.
     /// </summary>
     private async Task<UnityWebRequest> SetupAndSendUWRAsync(UnityWebRequest uwr)
     {
@@ -85,7 +86,11 @@ public partial class FirestormConfig : ScriptableObject
         Debug.Log($"Sending {uwr.uri} {uwr.url}");
         var ao = uwr.SendWebRequest();
         await ao.WaitAsync();
-        Debug.Log($"Done! {ao.webRequest.isDone} {ao.webRequest.isHttpError} {ao.webRequest.isNetworkError} {ao.webRequest.error} {ao.webRequest.downloadHandler.text}");
+        Debug.Log($"Done! {ao.webRequest.isDone} {ao.webRequest.isHttpError} {ao.webRequest.isNetworkError} {ao.webRequest.error} {ao.webRequest.downloadHandler?.text}");
+        if (ao.webRequest.isHttpError || ao.webRequest.isNetworkError)
+        {
+            throw new FirestormException($"UnityWebRequest error : {ao.webRequest.error}");
+        }
         return ao.webRequest;
     }
 
