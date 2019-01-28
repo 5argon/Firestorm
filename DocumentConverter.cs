@@ -142,6 +142,7 @@ where T : class, new()
                 switch (obj)
                 {
                     case DateTime dt:
+                        dt = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
                         writer.WritePropertyName("timestampValue");
                         writer.WriteValue(dt.ToString("o"));
                         break;
