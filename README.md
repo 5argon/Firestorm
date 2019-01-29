@@ -5,7 +5,7 @@ Makeshift Cloud Firestore C# API that works on Unity via pure REST API. Contains
 ## Why Cloud Firestore
 
 - Cloud Firestore is described as better than Readtime Database in every way, except that it is in beta and no Unity SDK yet.
-- Decision to use Realtime Database or Firestore is a big forked path, since it affects the way you would design as hierarchy (Firestore) or flat with data duplications (RDB). There is probably 0% chance of easy migration. Unity devs will be faced with difficult decision of using RDB now and wait for SDK then having to overhaul design and migrate database, or just use Firestore with Firestorm while waiting for official SDK.
+- Decision to use Realtime Database or Firestore is a big forked path, since it affects the way you would design as hierarchy with alternating collection-document (Firestore) or JSON tree design with lots of data duplications (RDB). There is probably 0% chance of easy migration. Unity devs will be faced with difficult decision of using RDB now and wait for SDK then having to overhaul design and migrate database, or just use Firestore with Firestorm while waiting for official SDK.
 - The official C# Firestore API is available but Unity is not good with Nuget + it pulls in tons of dependencies that likely cause problem later. Firestorm puts all the work to `UnityWebRequest` to do REST call to ensure compatibility.
 
 ## Approach
@@ -13,8 +13,8 @@ Makeshift Cloud Firestore C# API that works on Unity via pure REST API. Contains
 - Use the currently available Unity Firebase SDK Auth to login before performing any Firestorm call.
 - Firestorm will check on `FirebaseAuth.DefaultInstance.CurrentUser` and do `TokenAsync()`.
 - The token will be an input to perform REST API call to Cloud Firestore.
-- REST API performed by `UnityWebRequest`, which hopefully Unity will take care so it works with all platforms.
-- There is nothing related to service account. I don't want to add external dependency to the FirebaseAdmin package.
+- REST API performed by `UnityWebRequest`, which hopefully Unity will take care so it works with all platforms. (apparently Android could not do UWR PATCH header.. whoops)
+- There is nothing related to service account. I don't want to add external dependency to the Firebase Admin package.
 - The Firestorm API is designed to roughly resemble C# Firestore API so that the transition to the real thing is not painful when it arrives.
 
 ## Requires
@@ -28,52 +28,34 @@ Makeshift Cloud Firestore C# API that works on Unity via pure REST API. Contains
 
 It sucks! The JSON from Firestore has polymorphic union fields (see [example](https://firebase.google.com/docs/firestore/reference/rest/v1beta1/Value)) and it is impossible to work with without at least JSON to `Dictionary` support to put the field names as dict key then do reflections etc.
 
-## Not supported
+## Limitations
 
-- Type excluded in a document : Map, Geopoint (LatLng), bytes (use base-64 string instead), any mentioned types that is in an array.
-- Transaction
-- Batched write
-- Ordering
-- Limiting
-- Listening for realtime updates
-- Query cursor/pagination
-- Offline data
-- Managing index
-- Import/export data
+I made this just enough to adopt Firestore as soon as possible. Features are at bare minimum. Code is a mess and also performance is really BAD. (Sent JSON are even indented just so that debugging would be easy..)
+
+- Type excluded in a Document : Map (Map = dictionary of JSON not map as in world map), Geopoint (LatLng), bytes (use base-64 string instead).
+- Any mentioned types that is in an array. Basically, recursive programming is hard and I don't want to mess with it + my game does not have nested map design. But hey! Array is implemented! A friend list per player for example can be strings in an array.
+- On getting component you must provide a **type generic**. It **must** be a `class` (because it would be easy to do reflection to populate its value). If you would like to receive array, use `List<object>`. You take the risk of casting those objects if they are of different type! It will be reflected by field name of the document to match with what's in your type. The remaining fields are left at default. You cannot substitute any fields with `Dictionary<string, string>`.
+- Transaction not supported. (You cannot do atomic operation that rolls back together when one thing fails)
+- Manual rollback not supported. (There is a REST endpoint for this)
+- Batched write not supported.
+- Ordering not supported.
+- Limiting not supported.
+- Listening for realtime updates not supported.
+- Query cursor/pagination not supported.
+- Offline data not supported.
+- Managing index not supported.
+- Import/export data not supported.
+- No admin API supported. (Use a work around by creating a "super user" with all allowed permission for the Firestore instead of a real service account)
 
 Let's wait for the Unity SDK for those. (They are already all supported in regular C# Firestore SDK)
 
-## Available REST functions 
+## How to use
 
-See here : https://firebase.google.com/docs/firestore/reference/rest/
-
-exportDocuments	POST /v1beta1/{name=projects/*/databases/*}:exportDocuments 
-importDocuments	POST /v1beta1/{name=projects/*/databases/*}:importDocuments 
-
-batchGet	POST /v1beta1/{database=projects/*/databases/*}/documents:batchGet 
-beginTransaction	POST /v1beta1/{database=projects/*/databases/*}/documents:beginTransaction 
-commit	POST /v1beta1/{database=projects/*/databases/*}/documents:commit 
-createDocument	POST /v1beta1/{parent=projects/*/databases/*/documents/**}/{collectionId} 
-delete	DELETE /v1beta1/{name=projects/*/databases/*/documents/*/**} 
-get	GET /v1beta1/{name=projects/*/databases/*/documents/*/**} 
-list	GET /v1beta1/{parent=projects/*/databases/*/documents/*/**}/{collectionId} 
-list	GET /v1beta1/{parent=projects/*/databases/*/documents/*/**}/{collectionId} 
-patch	PATCH /v1beta1/{document.name=projects/*/databases/*/documents/*/**} 
-rollback	POST /v1beta1/{database=projects/*/databases/*}/documents:rollback 
-runQuery	POST /v1beta1/{parent=projects/*/databases/*/documents}:runQuery 
-write	POST /v1beta1/{database=projects/*/databases/*}/documents:write 
-
-create	POST /v1beta1/{parent=projects/*/databases/*}/indexes 
-delete	DELETE /v1beta1/{name=projects/*/databases/*/indexes/*} 
-get	GET /v1beta1/{name=projects/*/databases/*/indexes/*} 
-list	GET /v1beta1/{parent=projects/*/databases/*}/indexes 
-
-This repo is just enough to continue working on a game so yeah.. that's all I want in my game. 
-(For example I didn't even implement delete. My game is not possible to delete data.)
+Please look in the test assembly folder for a general idea, I don't have time to write a guide yet.. but it always begin with something like `Firestorm.Collection("c1").Document("d1").Collection("c1-1").Document("d2")._____`. (Use `FirebaseAuth.DefaultInstance` to sign in first! It works on the `CurrentUser`.)
 
 ## "Oh no REST sucks, why don't you use gRPC?"
 
-In short I gave up, but it looks like a better than REST way if done right. It is just too messy with Unity. (In normal C# where NUGET is usable I would do RPC way.)
+In short I gave up, but it looks like a better than REST way if done right. It is just too messy with Unity. (In normal C# where NUGET is usable I would do RPC way.) Also the official C# API for Firestore uses the RPC + protobuf way, so no JSON mess like what I have here.
 
 ### What is it
 

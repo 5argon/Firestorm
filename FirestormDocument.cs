@@ -31,6 +31,27 @@ public struct FirestormDocument
     public async Task<T> SetAsync<T>(T documentData, SetOption setOption) where T : class, new()
     {
         //Check if a document is there or not
+
+        var snapshot = await GetSnapshotAsync();
+        if (snapshot.IsEmpty)
+        {
+            //Create a document 
+
+            //Document "name" must not be set when creating a new one. The name should be in query parameter "documentId"
+            string documentJson = JsonConvert.SerializeObject(documentData, Formatting.Indented, new DocumentConverter<T>(""));
+            Debug.Log($"Name {documentName} DOCJ {documentJson}");
+
+            byte[] postData = Encoding.UTF8.GetBytes(documentJson);
+
+            var uwr = await FirestormConfig.Instance.UWRPost(parent, new Dictionary<string, string>
+            {
+                ["documentId"] = documentName,
+            }, postData);
+            return new FirestormDocumentSnapshot(uwr.downloadHandler.text).ConvertTo<T>();
+        }
+
+        //If there is a data.. we try to build the correct DocumentMask.
+
         if (setOption == SetOption.MergeAll)
         {
             //lol Android does not support custom verb for UnityWebRequest so we could not use PATCH 
@@ -45,22 +66,6 @@ public struct FirestormDocument
         else if (setOption == SetOption.Overwrite)
         {
             //Getting fields of existing data.
-            var snapshot = await GetSnapshotAsync();
-            if (snapshot.IsEmpty)
-            {
-                //Create a document 
-                //Document name must not be set when creating a new one
-                string documentJson = JsonConvert.SerializeObject(documentData, Formatting.Indented, new DocumentConverter<T>(""));
-                Debug.Log($"Name {documentName} DOCJ {documentJson}");
-
-                byte[] postData = Encoding.UTF8.GetBytes(documentJson);
-
-                var uwr = await FirestormConfig.Instance.UWRPost(parent, new Dictionary<string, string>
-                {
-                    ["documentId"] = documentName,
-                }, postData);
-                return new FirestormDocumentSnapshot(uwr.downloadHandler.text).ConvertTo<T>();
-            }
             else
             {
                 //Patch a document, using fields from REMOTE so outliers are removed.

@@ -9,10 +9,23 @@ namespace FirestormTests
 {
     public class OperationTest : FirestormTestBase
     {
-        private class TestData
+        private class TestDataAB
         {
             public int a;
             public string b;
+        }
+
+        private class TestDataAC
+        {
+            public int a;
+            public double c;
+        }
+
+        private class TestDataABC
+        {
+            public int a;
+            public string b;
+            public double c;
         }
 
         [UnityTest]
@@ -43,7 +56,6 @@ namespace FirestormTests
         [UnityTest]
         public IEnumerator GetEmptyDocument()
         {
-            //Getting empty document is an HTTP 404 error on UnityWebRequest. It would bubble up as an exception.
             yield return T().YieldWait(); async Task T()
             {
                 await EnsureCleanTestCollection();
@@ -54,19 +66,102 @@ namespace FirestormTests
         }
 
         [UnityTest]
-        public IEnumerator SetAsyncNewDocument()
+        public IEnumerator SetAsyncOverwriteNew()
         {
             yield return T().YieldWait(); async Task T()
             {
                 await EnsureCleanTestCollection();
                 await SignInSuperUser();
-                await TestDocument1.SetAsync<TestData>(new TestData { a = 31, b = "hi" }, SetOption.Overwrite);
+                await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 31, b = "hi" }, SetOption.Overwrite);
                 //Check if the data is there on the server
                 var snapshot = await TestDocument1.GetSnapshotAsync();
                 Assert.That(snapshot.IsEmpty, Is.Not.True);
-                var td = snapshot.ConvertTo<TestData>();
+                var td = snapshot.ConvertTo<TestDataAB>();
                 Assert.That(td.a, Is.EqualTo(31));
                 Assert.That(td.b, Is.EqualTo("hi"));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator SetAsyncMergeAllNew()
+        {
+            yield return T().YieldWait(); async Task T()
+            {
+                await EnsureCleanTestCollection();
+                await SignInSuperUser();
+                await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 31, b = "hi" }, SetOption.MergeAll);
+                //Check if the data is there on the server
+                var snapshot = await TestDocument1.GetSnapshotAsync();
+                Assert.That(snapshot.IsEmpty, Is.Not.True);
+                var td = snapshot.ConvertTo<TestDataAB>();
+                Assert.That(td.a, Is.EqualTo(31));
+                Assert.That(td.b, Is.EqualTo("hi"));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator SetAsyncOverwriteUpdate()
+        {
+            yield return T().YieldWait(); async Task T()
+            {
+                await EnsureCleanTestCollection();
+                await SignInSuperUser();
+                await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 31, b = "hi" }, SetOption.Overwrite);
+                await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 55, b = "yo" }, SetOption.Overwrite);
+
+                var snapshot = await TestDocument1.GetSnapshotAsync();
+                Assert.That(snapshot.IsEmpty, Is.Not.True);
+                var td = snapshot.ConvertTo<TestDataAB>();
+                Assert.That(td.a, Is.EqualTo(55));
+                Assert.That(td.b, Is.EqualTo("yo"));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator SetAsyncOverwriteLess()
+        {
+            yield return T().YieldWait(); async Task T()
+            {
+                await EnsureCleanTestCollection();
+                await SignInSuperUser();
+                await TestDocument1.SetAsync<TestDataABC>(new TestDataABC { a = 31, b = "hi", c = 55.555 }, SetOption.Overwrite);
+                await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 55, b = "yo" }, SetOption.Overwrite);
+
+                var snapshot = await TestDocument1.GetSnapshotAsync();
+                Assert.That(snapshot.IsEmpty, Is.Not.True);
+
+                var ab = snapshot.ConvertTo<TestDataAB>();
+                Assert.That(ab.a, Is.EqualTo(55));
+                Assert.That(ab.b, Is.EqualTo("yo"));
+
+                var abc = snapshot.ConvertTo<TestDataABC>();
+                Assert.That(abc.a, Is.EqualTo(55));
+                Assert.That(abc.b, Is.EqualTo("yo"));
+                Assert.That(abc.c, Is.EqualTo(default(double)), "With overwrite the double field is removed from the server");
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator SetAsyncOverwriteMore()
+        {
+            yield return T().YieldWait(); async Task T()
+            {
+                await EnsureCleanTestCollection();
+                await SignInSuperUser();
+                await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 55, b = "yo" }, SetOption.Overwrite);
+                await TestDocument1.SetAsync<TestDataABC>(new TestDataABC { a = 31, b = "hi", c = 55.555 }, SetOption.Overwrite);
+
+                var snapshot = await TestDocument1.GetSnapshotAsync();
+                Assert.That(snapshot.IsEmpty, Is.Not.True);
+
+                var abc = snapshot.ConvertTo<TestDataABC>();
+                Assert.That(abc.a, Is.EqualTo(31));
+                Assert.That(abc.b, Is.EqualTo("h1"));
+                Assert.That(abc.c, Is.EqualTo(55.555));
+
+                var ab = snapshot.ConvertTo<TestDataAB>();
+                Assert.That(ab.a, Is.EqualTo(31), "It is fine to convert to data type with less fields");
+                Assert.That(ab.b, Is.EqualTo("hi"), "It is fine to convert to data type with less fields");
             }
         }
     }
