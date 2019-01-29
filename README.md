@@ -1,5 +1,7 @@
 # Firestorm 
 
+![icon](.icon.png)
+
 Makeshift Cloud Firestore C# API that works on Unity via pure REST API. Contains only basic functions.
 
 ## Why Cloud Firestore
@@ -21,12 +23,17 @@ Makeshift Cloud Firestore C# API that works on Unity via pure REST API. Contains
 
 - Unity 2019.1 (may work with 2018.3 but I have enough time to care about backward compatibility sorry..)
 - C# 7.3
-- Firebase Unity SDK : Auth
+- Firebase Unity SDK : FirebaseAuth, FirebaseApp (it must cache the `FirebaseApp` instance to prevent GC hard crash described in the mid-January patch note)
+- Unity.Tasks that comes with Firebase Unity SDK. The Auth wants it.
 - Newtonsoft.Json
+
+I put the requirement as an "assembly override" in the asmdef explicitly. It requires 4 `dll` total :
+
+![ss](.ss1.png)
 
 ## Why not Unity's JsonUtility
 
-It sucks! The JSON from Firestore has polymorphic union fields (see [example](https://firebase.google.com/docs/firestore/reference/rest/v1beta1/Value)) and it is impossible to work with without at least JSON to `Dictionary` support to put the field names as dict key then do reflections etc.
+It sucks! The JSON from Firestore has polymorphic union fields (see [example](https://firebase.google.com/docs/firestore/reference/rest/v1beta1/Value)) and it is impossible to work with without at least JSON to `Dictionary` support to put the field names as dict key then do reflections etc. I used Json.NET to iterate and peel out the JSON with `JObject` LINQ support and to tailor made a JSON that Firebase would accept.
 
 ## Limitations
 
@@ -52,6 +59,8 @@ Let's wait for the Unity SDK for those. (They are already all supported in regul
 ## How to use
 
 Please look in the test assembly folder for a general idea, I don't have time to write a guide yet.. but it always begin with something like `Firestorm.Collection("c1").Document("d1").Collection("c1-1").Document("d2")._____`. (Use `FirebaseAuth.DefaultInstance` to sign in first! It works on the `CurrentUser`.)
+
+When migrating to the real thing later, `Firestorm` would become `FirestoreDatabase` instance got from somewhere. Everything else should be roughly the same. (?)
 
 ## "Oh no REST sucks, why don't you use gRPC?"
 
