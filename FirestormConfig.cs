@@ -71,8 +71,18 @@ public partial class FirestormConfig : ScriptableObject
     /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
     internal async Task<UnityWebRequest> UWRDelete(string path)
     {
-        Debug.Log($"Deleting {FirestormConfig.Instance.RestDocumentBasePath}{path}");
+        //Debug.Log($"Deleting {FirestormConfig.Instance.RestDocumentBasePath}{path}");
         UnityWebRequest uwr = UnityWebRequest.Delete($"{FirestormConfig.Instance.RestDocumentBasePath}{path}");
+        return await SetupAndSendUWRAsync(uwr);
+    }
+
+    /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
+    internal async Task<UnityWebRequest> UWRPatch(string path,Dictionary<string, string> postData)
+    {
+        //Debug.Log($"Deleting {FirestormConfig.Instance.RestDocumentBasePath}{path}");
+        UnityWebRequest uwr = UnityWebRequest.Post($"{FirestormConfig.Instance.RestDocumentBasePath}{path}", postData);
+        //MAY NOT WORK ON ANDROID??
+        uwr.SetRequestHeader("X-HTTP-Method-Override", "PATCH");
         return await SetupAndSendUWRAsync(uwr);
     }
 
@@ -81,7 +91,12 @@ public partial class FirestormConfig : ScriptableObject
     /// </summary>
     private async Task<UnityWebRequest> SetupAndSendUWRAsync(UnityWebRequest uwr)
     {
-        var token = await FirebaseAuth.DefaultInstance.CurrentUser.TokenAsync(forceRefresh: true);
+        Debug.Log($"{Firestorm.AuthInstance} {Firestorm.AuthInstance.App.Name} {Firestorm.AuthInstance?.CurrentUser}");
+        if(Firestorm.AuthInstance.CurrentUser == null)
+        {
+            throw new FirestormException($"Login with FirebaseAuth first!");
+        }
+        var token = await Firestorm.AuthInstance.CurrentUser.TokenAsync(forceRefresh: true);
         uwr.SetRequestHeader("Authorization", $"Bearer {token}");
         Debug.Log($"Sending {uwr.uri} {uwr.url}");
         var ao = uwr.SendWebRequest();
@@ -89,7 +104,7 @@ public partial class FirestormConfig : ScriptableObject
         Debug.Log($"Done! {ao.webRequest.isDone} {ao.webRequest.isHttpError} {ao.webRequest.isNetworkError} {ao.webRequest.error} {ao.webRequest.downloadHandler?.text}");
         if (ao.webRequest.isHttpError || ao.webRequest.isNetworkError)
         {
-            throw new FirestormException($"UnityWebRequest error : {ao.webRequest.error}");
+            throw new FirestormWebRequestException(uwr, $"UnityWebRequest error : {ao.webRequest.error}");
         }
         return ao.webRequest;
     }

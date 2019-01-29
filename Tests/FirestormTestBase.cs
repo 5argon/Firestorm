@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using NUnit.Framework;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace FirestormTests
 {
@@ -101,12 +102,19 @@ namespace FirestormTests
             }
         }
 
+        /// <summary>
+        /// Will sign in and sign out to do the clean up
+        /// </summary>
         protected async Task EnsureCleanTestCollection()
         {
             await SignInSuperUser();
             await Task.WhenAll(AllTestDocuments.Select(x => x.DeleteAsync()));
+            Debug.Log($"Cleaning done!");
             //The collection is automatically removed when you delete all documents.
-            
+            var querySs = await TestCollection.GetSnapshotAsync();
+            Debug.Log($"Test!");
+            Firestorm.AuthInstance.SignOut();
+            Debug.Log($"Signout done!");
         }
 
         protected async Task EnsureSuperUserAccountCreated()
@@ -118,14 +126,15 @@ namespace FirestormTests
         protected async Task SignInSuperUser()
         {
             var config = FirestormConfig.Instance;
-            FirebaseUser fu = await FirebaseAuth.DefaultInstance.SignInWithEmailAndPasswordAsync(config.superUserEmail, config.superUserPassword);
+            FirebaseUser fu = await Firestorm.AuthInstance.SignInWithEmailAndPasswordAsync(config.superUserEmail, config.superUserPassword);
+            Debug.Log($"Signed in to super user {Firestorm.AuthInstance?.CurrentUser.UserId}");
         }
 
         private async Task EnsureUserCreated(string email, string password)
         {
             try
             {
-                await FirebaseAuth.DefaultInstance.CreateUserWithEmailAndPasswordAsync(email, password);
+                await Firestorm.AuthInstance.CreateUserWithEmailAndPasswordAsync(email, password);
             }
             catch (AggregateException e)
             {
@@ -138,9 +147,21 @@ namespace FirestormTests
         }
 
         [SetUp]
+        public void CreateTestInstance()
+        {
+            Firestorm.CreateEditModeInstance();
+        }
+
+        [SetUp]
         public void SignOutBeforeTest()
         {
-            FirebaseAuth.DefaultInstance.SignOut();
+            Firestorm.AuthInstance.SignOut();
+        }
+
+        [TearDown]
+        public void DisposeTestInstance()
+        {
+            Firestorm.DisposeEditModeInstance();
         }
     }
 }

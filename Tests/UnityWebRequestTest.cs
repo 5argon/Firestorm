@@ -1,4 +1,4 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using System.Collections;
 using UnityEngine.TestTools;
 using UnityEngine;
@@ -14,20 +14,6 @@ using System.IO;
 namespace FirestormTests
 {
 
-    public class OperationTest : FirestormTestBase
-    {
-        [UnityTest]
-        public IEnumerator CleaningWorks()
-        {
-            yield return T().YieldWait(); async Task T()
-            {
-                await EnsureCleanTestCollection();
-                var querySnapshot = await TestCollection.GetSnapshotAsync();
-                //Assert.That(querySnapshot.Documents.Length, Is.Zero);
-            }
-        }
-    }
-
     public class UnityWebRequestTest : FirestormTestBase
     {
         [UnityTest]
@@ -38,8 +24,8 @@ namespace FirestormTests
                 await EnsureSuperUserAccountCreated();
                 await SignInSuperUser();
                 var uwr = await (Task<UnityWebRequest>)typeof(FirestormConfig).GetMethod("UWRGet", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(FirestormConfig.Instance, new object[] { "/my-collection" });
-                Debug.Log($"{uwr.downloadHandler.text}");
-                File.WriteAllText($"{Application.dataPath}/hi.txt", $"{uwr.downloadHandler.text}");
+                //Debug.Log($"{uwr.downloadHandler.text}");
+                //File.WriteAllText($"{Application.dataPath}/hi.txt", $"{uwr.downloadHandler.text}");
                 Assert.That(uwr.isHttpError, Is.Not.True, uwr.error);
             }
         }

@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using UnityEngine;
+
 /// <summary>
 /// Hacky and painful JSON parsing to C#
 /// </summary>

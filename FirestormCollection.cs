@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 public struct FirestormCollection
@@ -26,8 +27,8 @@ public struct FirestormCollection
     public async Task<FirestormQuerySnapshot> GetSnapshotAsync()
     {
         var uwr = await FirestormConfig.Instance.UWRGet(sb.ToString());
-        Debug.Log($"Getting query snapshot : {uwr.downloadHandler.text}");
-        return JsonUtility.FromJson<FirestormQuerySnapshot>(uwr.downloadHandler.text);
+        Debug.Log($"Getting query snapshot : {uwr.downloadHandler.text} {uwr.error}");
+        return new FirestormQuerySnapshot(uwr.downloadHandler.text);
     }
 
     /// <summary>

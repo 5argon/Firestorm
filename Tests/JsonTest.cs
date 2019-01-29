@@ -55,7 +55,8 @@ namespace FirestormTests
             ts.typeArray.Add(11.111);
 
             var jsonString = JsonConvert.SerializeObject(ts, Formatting.Indented, new DocumentConverter<TestStruct>("dummy/path"));
-            File.WriteAllText($"{Application.dataPath}/yay.txt", jsonString);
+
+            //File.WriteAllText($"{Application.dataPath}/yay.txt", jsonString);
             //Debug.Log($"{jsonString}");
 
             var doc = new FirestormDocumentSnapshot(jsonString);
@@ -74,6 +75,14 @@ namespace FirestormTests
             Assert.That(convertBack.typeArray[1], Is.EqualTo(6789));
             Assert.That((bool)convertBack.typeArray[2], Is.EqualTo(true));
             Assert.That((double)convertBack.typeArray[3], Is.EqualTo(11.111));
+        }
+
+        [Test]
+        public void DocumentMask()
+        {
+            var mask = new DocumentMask { fieldPaths = new string[] { "a", "b", "c" } };
+            var fields = JsonConvert.SerializeObject(mask);
+            Assert.That(fields, Is.EqualTo(@"{""fieldPaths"":[""a"",""b"",""c""]}"));
         }
     }
 }
