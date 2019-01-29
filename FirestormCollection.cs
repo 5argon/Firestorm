@@ -6,16 +6,16 @@ using UnityEngine;
 
 public struct FirestormCollection
 {
-    internal StringBuilder sb;
+    internal StringBuilder stringBuilder;
     public FirestormCollection(string name)
     {
-        sb = new StringBuilder($"/{name}");
+        stringBuilder = new StringBuilder($"/{name}");
     }
 
     public FirestormCollection(FirestormDocument sb, string name)
     {
-        this.sb = sb.sb;
-        this.sb.Append($"/{name}");
+        this.stringBuilder = sb.stringBuilder;
+        this.stringBuilder.Append($"/{name}");
     }
 
     public FirestormDocument Document(string name) => new FirestormDocument(this, name);
@@ -26,9 +26,14 @@ public struct FirestormCollection
     /// </summary>
     public async Task<FirestormQuerySnapshot> GetSnapshotAsync()
     {
-        var uwr = await FirestormConfig.Instance.UWRGet(sb.ToString());
+        var uwr = await FirestormConfig.Instance.UWRGet(stringBuilder.ToString());
         Debug.Log($"Getting query snapshot : {uwr.downloadHandler.text} {uwr.error}");
         return new FirestormQuerySnapshot(uwr.downloadHandler.text);
+    }
+
+    public async Task<FirestormDocument> AddAsync<T>(T documentData) where T : class, new()
+    {
+        throw new NotImplementedException();
     }
 
     /// <summary>

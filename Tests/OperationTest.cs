@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 using System.Linq;
+using UnityEngine;
 
 namespace FirestormTests
 {
@@ -26,6 +27,19 @@ namespace FirestormTests
             }
         }
 
+        // [UnityTest]
+        // public IEnumerator CleaningWorks20Times()
+        // {
+        //     yield return T().YieldWait(); async Task T()
+        //     {
+        //         for (int i = 0; i < 20; i++)
+        //         {
+        //             await EnsureCleanTestCollection();
+        //             Debug.Log($"Passed {i}");
+        //         }
+        //     }
+        // }
+
         [UnityTest]
         public IEnumerator GetEmptyDocument()
         {
@@ -40,7 +54,7 @@ namespace FirestormTests
         }
 
         [UnityTest]
-        public IEnumerator SetAsync()
+        public IEnumerator SetAsyncNewDocument()
         {
             yield return T().YieldWait(); async Task T()
             {

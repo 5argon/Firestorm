@@ -42,10 +42,16 @@ public partial class FirestormConfig : ScriptableObject
     public string ProjectID => projectId;
 
     /// <summary>
-    /// The REST API url up to ".../documents", then you add one more slash or colon and continue building the url.
+    /// No trailing and starting slash
+    /// </summary>
+    public string DocumentPathFromProjects => $"projects/{ProjectID}/databases/(default)/documents";
+
+    /// <summary>
+    /// The REST API url from http:// up to ".../documents", then you add one more slash or colon and continue building the url.
     /// You could do REST API in [this category](https://firebase.google.com/docs/firestore/reference/rest/?authuser=1#rest-resource-v1beta1projectsdatabasesdocuments) with this.
     /// </summary>
-    public string RestDocumentBasePath => $"{Firestorm.restApiBaseUrl}/projects/{ProjectID}/databases/(default)/documents";
+    public string RestDocumentBasePath => $"{Firestorm.restApiBaseUrl}/{DocumentPathFromProjects}";
+
 
     /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
     internal async Task<UnityWebRequest> UWRGet(string path)
@@ -55,9 +61,22 @@ public partial class FirestormConfig : ScriptableObject
     }
 
     /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
-    internal async Task<UnityWebRequest> UWRPost(string path, Dictionary<string, string> postData)
+    internal async Task<UnityWebRequest> UWRPost(string path, Dictionary<string, string> queryParameters, byte[] postData)
     {
-        UnityWebRequest uwr = UnityWebRequest.Post($"{FirestormConfig.Instance.RestDocumentBasePath}{path}", postData);
+        var queryUrlBuilder = new StringBuilder();
+        if (queryParameters.Count > 0)
+        {
+            queryUrlBuilder.Append("?");
+            foreach (var kvp in queryParameters)
+            {
+                queryUrlBuilder.Append($"{kvp.Key}={kvp.Value}");
+            }
+        }
+
+        //UWR did not put the dictionary in the URL as could be interpreted from https://docs.unity3d.com/ScriptReference/Networking.UnityWebRequest.Post.html
+        //It LOOKS LIKE query parameter but they are somewhere in the form data not on the URL
+        UnityWebRequest uwr = UnityWebRequest.Post($"{FirestormConfig.Instance.RestDocumentBasePath}{path}{queryUrlBuilder.ToString()}", queryParameters);
+        uwr.uploadHandler = new UploadHandlerRaw(postData);
         return await SetupAndSendUWRAsync(uwr);
     }
 
@@ -91,12 +110,12 @@ public partial class FirestormConfig : ScriptableObject
     /// </summary>
     private async Task<UnityWebRequest> SetupAndSendUWRAsync(UnityWebRequest uwr)
     {
-        Debug.Log($"{Firestorm.AuthInstance} {Firestorm.AuthInstance.App.Name} {Firestorm.AuthInstance?.CurrentUser}");
+        //Debug.Log($"Checking user in the Auth instance {Firestorm.AuthInstance.App.Name} -> {Firestorm.AuthInstance?.CurrentUser?.UserId}");
         if(Firestorm.AuthInstance.CurrentUser == null)
         {
             throw new FirestormException($"Login with FirebaseAuth first!");
         }
-        var token = await Firestorm.AuthInstance.CurrentUser.TokenAsync(forceRefresh: true);
+        var token = await Firestorm.AuthInstance.CurrentUser.TokenAsync(forceRefresh: false);
         uwr.SetRequestHeader("Authorization", $"Bearer {token}");
         Debug.Log($"Sending {uwr.uri} {uwr.url}");
         var ao = uwr.SendWebRequest();

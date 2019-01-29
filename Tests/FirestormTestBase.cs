@@ -108,13 +108,16 @@ namespace FirestormTests
         protected async Task EnsureCleanTestCollection()
         {
             await SignInSuperUser();
+
+            //Debug.Log($"(User still here? {Firestorm.AuthInstance.CurrentUser})");
             await Task.WhenAll(AllTestDocuments.Select(x => x.DeleteAsync()));
-            Debug.Log($"Cleaning done!");
+            //Debug.Log($"Cleaning done! (User still here? {Firestorm.AuthInstance.CurrentUser})");
+
             //The collection is automatically removed when you delete all documents.
             var querySs = await TestCollection.GetSnapshotAsync();
-            Debug.Log($"Test!");
+            //Debug.Log($"Test!");
             Firestorm.AuthInstance.SignOut();
-            Debug.Log($"Signout done!");
+            //Debug.Log($"Signout done!");
         }
 
         protected async Task EnsureSuperUserAccountCreated()
@@ -126,9 +129,23 @@ namespace FirestormTests
         protected async Task SignInSuperUser()
         {
             var config = FirestormConfig.Instance;
+            // Firestorm.AuthInstance.IdTokenChanged -= IdTokenChanged;
+            // Firestorm.AuthInstance.StateChanged -= LoginChanged;
+            // Firestorm.AuthInstance.IdTokenChanged += IdTokenChanged;
+            // Firestorm.AuthInstance.StateChanged += LoginChanged;
             FirebaseUser fu = await Firestorm.AuthInstance.SignInWithEmailAndPasswordAsync(config.superUserEmail, config.superUserPassword);
-            Debug.Log($"Signed in to super user {Firestorm.AuthInstance?.CurrentUser.UserId}");
+            //Debug.Log($"Signed in to super user {Firestorm.AuthInstance?.CurrentUser.UserId}");
         }
+
+        // public void IdTokenChanged(object sender, EventArgs e)
+        // {
+        //     Debug.Log($"Token changed!!");
+        // }
+
+        // public void LoginChanged(object sender, EventArgs e)
+        // {
+        //     Debug.Log($"State changed to {Firestorm.AuthInstance.CurrentUser?.UserId} !!");
+        // }
 
         private async Task EnsureUserCreated(string email, string password)
         {
@@ -149,7 +166,10 @@ namespace FirestormTests
         [SetUp]
         public void CreateTestInstance()
         {
-            Firestorm.CreateEditModeInstance();
+            if (Application.isPlaying == false)
+            {
+                Firestorm.CreateEditModeInstance();
+            }
         }
 
         [SetUp]
@@ -161,7 +181,10 @@ namespace FirestormTests
         [TearDown]
         public void DisposeTestInstance()
         {
-            Firestorm.DisposeEditModeInstance();
+            if (Application.isPlaying == false)
+            {
+                Firestorm.DisposeEditModeInstance();
+            }
         }
     }
 }

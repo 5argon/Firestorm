@@ -13,14 +13,21 @@ public class Firestorm
     /// </summary>
     public static FirestormCollection Collection(string name) => new FirestormCollection(name);
 
-    private static FirebaseApp editModeInstance;
+    //Prevents garbage collection bug
+    private static FirebaseApp appInstance;
+    private static FirebaseAuth authInstance;
+
     public static void CreateEditModeInstance()
     {
         DisposeEditModeInstance();
-        editModeInstance = FirebaseApp.Create(FirebaseApp.DefaultInstance.Options, $"TestInstance {Random.Range(10000, 99999)}");
+        appInstance = FirebaseApp.Create(FirebaseApp.DefaultInstance.Options, $"TestInstance {Random.Range(10000, 99999)}");
     }
 
-    public static void DisposeEditModeInstance() => editModeInstance?.Dispose();
+    public static void DisposeEditModeInstance() 
+    {
+        //Somehow this crashes Unity lol... the network is left running in the other thread it seems.
+        appInstance?.Dispose();
+    }
 
     public static FirebaseAuth AuthInstance
     {
@@ -28,17 +35,20 @@ public class Firestorm
         {
             if (Application.isPlaying)
             {
-                return FirebaseAuth.DefaultInstance;
+                appInstance = FirebaseApp.DefaultInstance;
+                authInstance = FirebaseAuth.GetAuth(appInstance);
+                return authInstance;
             }
             else
             {
                 //Firebase said you should not use default instance in editor (edit mode test also)
                 //https://firebase.google.com/docs/unity/setup#desktop_workflow
-                if(editModeInstance == null)
+                if(appInstance == null)
                 {
                     throw new FirestormException($"You forgot to call CreateEditModeInstance before running in edit mode");
                 }
-                return FirebaseAuth.GetAuth(editModeInstance);
+                authInstance = FirebaseAuth.GetAuth(appInstance);
+                return authInstance;
             }
         }
     }

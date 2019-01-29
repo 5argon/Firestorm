@@ -50,7 +50,9 @@ public struct FirestormDocumentSnapshot
         else
         {
             var mask = new DocumentMask { fieldPaths = properties.Select(x => x.Name).ToArray() };
-            return JsonConvert.SerializeObject(mask);
+            var m = JsonConvert.SerializeObject(mask);
+            Debug.Log($"Made mask {m}");
+            return m;
         }
     }
 
