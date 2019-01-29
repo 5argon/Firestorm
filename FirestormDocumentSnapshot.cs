@@ -66,7 +66,7 @@ public struct FirestormDocumentSnapshot
         {
             name = jo[nameof(name)].ToObject<string>();
             fields = jo[nameof(fields)];
-            properties = jo.Properties();
+            properties = fields.Children<JProperty>();
             if (jo.ContainsKey(nameof(createTime)) &&
                 jo.ContainsKey(nameof(updateTime)))
             {

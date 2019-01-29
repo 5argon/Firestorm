@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Firebase.Auth;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 public struct FirestormDocument
@@ -43,9 +45,10 @@ public struct FirestormDocument
 
             byte[] postData = Encoding.UTF8.GetBytes(documentJson);
 
-            var uwr = await FirestormConfig.Instance.UWRPost(parent, new Dictionary<string, string>
+            //The URL must NOT include document name
+            var uwr = await FirestormConfig.Instance.UWRPost(parent, new (string, string)[]
             {
-                ["documentId"] = documentName,
+                ("documentId",documentName)
             }, postData);
             return new FirestormDocumentSnapshot(uwr.downloadHandler.text).ConvertTo<T>();
         }
@@ -66,14 +69,39 @@ public struct FirestormDocument
         else if (setOption == SetOption.Overwrite)
         {
             //Getting fields of existing data.
-            else
-            {
-                //Patch a document, using fields from REMOTE so outliers are removed.
+            //Patch a document, using fields from remote combined with local.
+            // Including all local fields ensure update
+            // Including remote fields that does not intersect with local = delete on the server
+            string fieldMaskRemote = snapshot.FieldsDocumentMaskJson();
+            string documentJson = JsonConvert.SerializeObject(documentData, Formatting.Indented, new DocumentConverter<T>(""));
+            string fieldMaskLocal = new FirestormDocumentSnapshot(documentJson).FieldsDocumentMaskJson();
 
-                var fieldMask = snapshot.FieldsDocumentMaskJson();
-                throw new NotImplementedException();
+            var f1 = JsonConvert.DeserializeObject<DocumentMask>(fieldMaskRemote);
+            var f2 = JsonConvert.DeserializeObject<DocumentMask>(fieldMaskLocal);
+            var mergedFields = new HashSet<string>();
+            foreach (var f in f1.fieldPaths)
+            {
+                mergedFields.Add(f);
             }
+            foreach (var f in f2.fieldPaths)
+            {
+                mergedFields.Add(f);
+            }
+            // var mergedMasks = new DocumentMask { fieldPaths = mergedFields.ToArray() };
+            // var mergedMasksJson = JsonConvert.SerializeObject(mergedMasks);
+            // var jo = JObject.Parse(mergedMasksJson);
+
+            //Debug.Log($"Mask {mergedMasksJson} DOCJ {documentJson}");
+            Debug.Log($"DOCJ {documentJson}");
+
+            byte[] postData = Encoding.UTF8.GetBytes(documentJson);
+
+            var updateMaskForUrl = mergedFields.Select(x => ("updateMask.fieldPaths", x)).ToArray();
+            var uwr = await FirestormConfig.Instance.UWRPatch(stringBuilder.ToString(), updateMaskForUrl, postData);
+            return new FirestormDocumentSnapshot(uwr.downloadHandler.text).ConvertTo<T>();
+
         }
+
         throw new NotImplementedException($"Set option {setOption} not implemented");
     }
 

@@ -51,6 +51,15 @@ where T : class, new()
 
         FieldInfo field = typeof(T).GetField(propertyName, BindingFlags.Instance | BindingFlags.Public);
 
+        if(field == null)
+        {
+            //propertyName that came from the server does not match anything.. we left it as is
+            reader.Read(); // at the real value now
+            reader.Read(); // at EndObject
+            reader.Read(); // at the next start field or the real EndObject
+            return;
+        }
+
         switch (name)
         {
             case "integerValue":

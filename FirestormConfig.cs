@@ -61,23 +61,29 @@ public partial class FirestormConfig : ScriptableObject
     }
 
     /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
-    internal async Task<UnityWebRequest> UWRPost(string path, Dictionary<string, string> queryParameters, byte[] postData)
+    internal async Task<UnityWebRequest> UWRPost(string path, (string, string)[] queryParameters, byte[] postData)
+    {
+        return await SetupAndSendUWRAsync(BuildPost(path, queryParameters, postData));
+    }
+
+    private UnityWebRequest BuildPost(string path, (string, string)[] queryParameters, byte[] postData)
     {
         var queryUrlBuilder = new StringBuilder();
-        if (queryParameters.Count > 0)
+        if (queryParameters.Length > 0)
         {
             queryUrlBuilder.Append("?");
             foreach (var kvp in queryParameters)
             {
-                queryUrlBuilder.Append($"{kvp.Key}={kvp.Value}");
+                queryUrlBuilder.Append($"{kvp.Item1}={kvp.Item2}");
+                queryUrlBuilder.Append("&");
             }
         }
 
         //UWR did not put the dictionary in the URL as could be interpreted from https://docs.unity3d.com/ScriptReference/Networking.UnityWebRequest.Post.html
         //It LOOKS LIKE query parameter but they are somewhere in the form data not on the URL
-        UnityWebRequest uwr = UnityWebRequest.Post($"{FirestormConfig.Instance.RestDocumentBasePath}{path}{queryUrlBuilder.ToString()}", queryParameters);
+        UnityWebRequest uwr = UnityWebRequest.Post($"{FirestormConfig.Instance.RestDocumentBasePath}{path}{queryUrlBuilder.ToString()}", "");
         uwr.uploadHandler = new UploadHandlerRaw(postData);
-        return await SetupAndSendUWRAsync(uwr);
+        return uwr;
     }
 
     /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
@@ -96,10 +102,10 @@ public partial class FirestormConfig : ScriptableObject
     }
 
     /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
-    internal async Task<UnityWebRequest> UWRPatch(string path,Dictionary<string, string> postData)
+    internal async Task<UnityWebRequest> UWRPatch(string path, (string, string)[] queryParameters, byte[] postData)
     {
-        //Debug.Log($"Deleting {FirestormConfig.Instance.RestDocumentBasePath}{path}");
-        UnityWebRequest uwr = UnityWebRequest.Post($"{FirestormConfig.Instance.RestDocumentBasePath}{path}", postData);
+        var uwr = BuildPost(path, queryParameters, postData);
+        uwr.method = "PATCH";
         //MAY NOT WORK ON ANDROID??
         uwr.SetRequestHeader("X-HTTP-Method-Override", "PATCH");
         return await SetupAndSendUWRAsync(uwr);

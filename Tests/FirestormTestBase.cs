@@ -13,6 +13,24 @@ namespace FirestormTests
 {
     public class FirestormTestBase
     {
+        protected class TestDataAB
+        {
+            public int a;
+            public string b;
+        }
+
+        protected class TestDataAC
+        {
+            public int a;
+            public double c;
+        }
+
+        protected class TestDataABC
+        {
+            public int a;
+            public string b;
+            public double c;
+        }
         const string testCollectionName = "firestorm-test-collection";
 
         const string testDataName1 = "firestorm-test-data-1";

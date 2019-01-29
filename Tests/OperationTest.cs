@@ -9,24 +9,6 @@ namespace FirestormTests
 {
     public class OperationTest : FirestormTestBase
     {
-        private class TestDataAB
-        {
-            public int a;
-            public string b;
-        }
-
-        private class TestDataAC
-        {
-            public int a;
-            public double c;
-        }
-
-        private class TestDataABC
-        {
-            public int a;
-            public string b;
-            public double c;
-        }
 
         [UnityTest]
         public IEnumerator CleaningWorks()
@@ -156,7 +138,7 @@ namespace FirestormTests
 
                 var abc = snapshot.ConvertTo<TestDataABC>();
                 Assert.That(abc.a, Is.EqualTo(31));
-                Assert.That(abc.b, Is.EqualTo("h1"));
+                Assert.That(abc.b, Is.EqualTo("hi"));
                 Assert.That(abc.c, Is.EqualTo(55.555));
 
                 var ab = snapshot.ConvertTo<TestDataAB>();
