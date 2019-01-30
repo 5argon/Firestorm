@@ -198,6 +198,19 @@ namespace FirestormTests
             }
         }
 
+        [UnityTest]
+        public IEnumerator FieldFilterEqualNoMatch()
+        {
+            yield return T().YieldWait(); async Task T()
+            {
+                await EnsureCleanTestCollection();
+                await SignInSuperUser();
+                await SetupForQuery();
+                var snap = await TestCollection.GetSnapshotAsync(("b", "==", "5argon"));
+                Assert.That(snap.Documents.Count(), Is.EqualTo(0));
+            }
+        }
+
         private class PlayerWithFriends
         {
             public string playerName;
@@ -232,6 +245,62 @@ namespace FirestormTests
                 Assert.That(current.playerName, Is.EqualTo("Suna"));
             }
         }
+
+        [UnityTest]
+        public IEnumerator CompositeFilterMultipleEqualsWorksWithoutCompositeIndex()
+        {
+            yield return T().YieldWait(); async Task T()
+            {
+                await EnsureCleanTestCollection();
+                await SignInSuperUser();
+                await SetupForQuery();
+
+                var snap = await TestCollection.GetSnapshotAsync(("b", "==", "x"), ("a", "==", 1));
+                var enu = snap.Documents.GetEnumerator();
+                TestDataABC current = null;
+
+                Assert.That(snap.Documents.Count(), Is.EqualTo(1));
+
+                enu.MoveNext();
+                current = enu.Current.ConvertTo<TestDataABC>();
+                Assert.That(current.a, Is.EqualTo(1));
+
+                snap = await TestCollection.GetSnapshotAsync(("b", "==", "x"), ("a", "==", 2), ("c", "==", 43.55));
+                Assert.That(snap.Documents.Count(), Is.Zero);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator CompositeFilter()
+        {
+            yield return T().YieldWait(); async Task T()
+            {
+                await EnsureCleanTestCollection();
+                await SignInSuperUser();
+                await SetupForQuery();
+
+                var snap = await TestCollection.GetSnapshotAsync(("a", ">=", 1));
+                Assert.That(snap.Documents.Count(), Is.EqualTo(3));
+
+                snap = await TestCollection.GetSnapshotAsync(("b", "==", "x"), ("a", ">=", 1));
+                var enu = snap.Documents.GetEnumerator();
+                Assert.That(snap.Documents.Count(), Is.EqualTo(1), "Since composite filter works, the >= 1 that would have returned 3 documents will be reduced to just 1");
+                enu.MoveNext();
+                var current = enu.Current.ConvertTo<TestDataABC>();
+                Assert.That(current.a, Is.EqualTo(1));
+                Assert.That(current.b, Is.EqualTo("x"));
+
+                snap = await TestCollection.GetSnapshotAsync(("a", ">=", 1), ("b", "==", "x"));
+                enu = snap.Documents.GetEnumerator();
+                Assert.That(snap.Documents.Count(), Is.EqualTo(1), "Ordering of the composite filter does not matter");
+                enu.MoveNext();
+                current = enu.Current.ConvertTo<TestDataABC>();
+                Assert.That(current.a, Is.EqualTo(1));
+                Assert.That(current.b, Is.EqualTo("x"));
+            }
+        }
+
+
 
     }
 }

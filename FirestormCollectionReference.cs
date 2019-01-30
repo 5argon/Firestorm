@@ -92,7 +92,7 @@ public struct FirestormCollectionReference
             CompositeFilter cf = new CompositeFilter
             {
                 op = Operator.AND.ToString(),
-                filters = fieldFilters.ToArray()
+                filters = fieldFilters.Select(x => new FilterForFieldFilter { fieldFilter = x }).ToArray(),
             };
             rq.structuredQuery.where = new Dictionary<string, IFilter>
             {
@@ -114,7 +114,7 @@ public struct FirestormCollectionReference
             };
 
         string postJson = JsonConvert.SerializeObject(rq, Formatting.Indented);
-        //File.WriteAllText(Application.dataPath + $"/{UnityEngine.Random.Range(0, 100)}.txt", postJson);
+        File.WriteAllText(Application.dataPath + $"/{UnityEngine.Random.Range(0, 100)}.txt", postJson);
         byte[] postData = Encoding.UTF8.GetBytes(postJson);
 
         //Path is the parent of this collection.
@@ -125,8 +125,9 @@ public struct FirestormCollectionReference
         var ja = JArray.Parse(uwr.downloadHandler.text);
         var newJo = JObject.FromObject(new 
         {
-            documents = ja.Children<JObject>().Select(x => x["document"].ToObject<object>())
+            documents = ja.Children<JObject>().Where(x => x.ContainsKey("document")).Select(x => x["document"].ToObject<object>())
         });
+        //Debug.Log($"this is new jo {newJo.ToString()}");
         return new FirestormQuerySnapshot(newJo.ToString());
     }
 
@@ -159,7 +160,12 @@ public struct FirestormCollectionReference
     private struct CompositeFilter : IFilter
     {
         public string op;
-        public FieldFilter[] filters;
+        public FilterForFieldFilter[] filters; //Composite to unary or to composite not supported
+    }
+
+    private struct FilterForFieldFilter
+    {
+        public FieldFilter fieldFilter;
     }
 
     private struct FieldFilter : IFilter, IComparable<FieldFilter>
