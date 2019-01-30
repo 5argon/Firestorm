@@ -43,9 +43,17 @@ public struct FirestormCollectionReference
         return new FirestormQuerySnapshot(uwr.downloadHandler.text);
     }
 
-    public async Task<FirestormDocumentReference> AddAsync<T>(T documentData) where T : class, new()
+    /// <typeparam name="string">A Firebase-generated new document ID</typeparam>
+    public async Task<string> AddAsync<T>(T documentData) where T : class, new()
     {
-        throw new NotImplementedException();
+        string documentJson = JsonConvert.SerializeObject(documentData, Formatting.Indented, new DocumentConverter<T>(""));
+        byte[] postData = Encoding.UTF8.GetBytes(documentJson);
+
+        //The URL must NOT include document name
+        var uwr = await FirestormConfig.Instance.UWRPost(stringBuilder.ToString(), new (string, string)[]
+        {
+        }, postData);
+        return new FirestormDocumentSnapshot(uwr.downloadHandler.text).name;
     }
 
     /// <summary>
@@ -53,7 +61,7 @@ public struct FirestormCollectionReference
     /// Runs against only immediate descendant documents of this collection.
     /// </summary>
     /// <summary>
-    /// <param name="operationString">The same string as in Javascript API such as "==", "<", "<=", ">", ">=", "array_contains".
+    /// <param name="operationString">The same strig as in Javascript API such as "==", "<", "<=", ">", ">=", "array_contains".
     /// They may add more than this in the future. "array_contains" was added later.</param>
     public async Task<FirestormQuerySnapshot> GetSnapshotAsync(params (string fieldName, string operationString, object target)[] queries)
     {
@@ -114,7 +122,7 @@ public struct FirestormCollectionReference
             };
 
         string postJson = JsonConvert.SerializeObject(rq, Formatting.Indented);
-        File.WriteAllText(Application.dataPath + $"/{UnityEngine.Random.Range(0, 100)}.txt", postJson);
+        //File.WriteAllText(Application.dataPath + $"/{UnityEngine.Random.Range(0, 100)}.txt", postJson);
         byte[] postData = Encoding.UTF8.GetBytes(postJson);
 
         //Path is the parent of this collection.

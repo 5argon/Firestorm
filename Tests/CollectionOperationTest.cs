@@ -90,6 +90,19 @@ namespace FirestormTests
             }
         }
 
+        // Generating a new document in collection will have a hard to clean up ID, so the test is excluded to prevent hassle (but it works)
+        // [UnityTest]
+        // public IEnumerator AddAsync()
+        // {
+        //     yield return T().YieldWait(); async Task T()
+        //     {
+        //         await EnsureCleanTestCollection();
+        //         await SignInSuperUser();
+        //         await TestCollection.AddAsync(new TestDataABC { a = 3, b = "z", c = 33.333 });
+        //         await TestSubcollection.AddAsync(new TestDataABC { a = 2323, b = "z", c = 33.333 });
+        //     }
+        // }
+
         [UnityTest]
         public IEnumerator FieldFilterLessThanEqual()
         {
@@ -297,6 +310,34 @@ namespace FirestormTests
                 current = enu.Current.ConvertTo<TestDataABC>();
                 Assert.That(current.a, Is.EqualTo(1));
                 Assert.That(current.b, Is.EqualTo("x"));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator CompositeFilterNoMatch()
+        {
+            yield return T().YieldWait(); async Task T()
+            {
+                await EnsureCleanTestCollection();
+                await SignInSuperUser();
+                await SetupForQuery();
+
+                var snap = await TestCollection.GetSnapshotAsync(("b", "==", "x"), ("a", ">", 4));
+                var enu = snap.Documents.GetEnumerator();
+                Assert.That(snap.Documents.Count(), Is.EqualTo(0));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator CompositeFilterAskForCreation()
+        {
+            yield return T().YieldWaitExpectException<FirestormPleaseCreateCompositeIndexException>(); async Task T()
+            {
+                await EnsureCleanTestCollection();
+                await SignInSuperUser();
+                await SetupForQuery();
+                var snap = await TestCollection.GetSnapshotAsync(("c", "<", 55.555), ("a", "==", 2));
+                //It should print the error with creation link here
             }
         }
 

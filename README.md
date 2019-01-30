@@ -53,6 +53,9 @@ I made this just enough to adopt Firestore as soon as possible. Features are at 
 - Managing index not supported.
 - Import/export data not supported.
 - No admin API supported. (Use a work around by creating a "super user" with all allowed permission for the Firestore instead of a real service account)
+- Ordering of a query is locked to **ascending**. When creating a composite index please use only ascending index.
+- `AddAsync` on the collection does not return the newly created document's reference but just the generated document ID.
+- Exception throwing is probably not so good. But I tried to bubble up the error from Google's message from JSON REST response download handler as much as possible. (You will at least see HTTP error code)
 
 Let's wait for the Unity SDK for those. (They are already all supported in regular C# Firestore SDK)
 
