@@ -90,7 +90,7 @@ The ultimate test. After making all the tests available in Play Mode, you can cl
 But in this build there are caveats :
 
 - You will get `DEVELOPMENT_BUILD` compilation flag. If your game somehow does not build on this button click but builds on normal method, check if your code has something against this precompiler flag or not.
-- Your Package name/Bundle ID will change to a fixed name : "". This will cause problem for `google-services.json` and `GoogleService-Info.plist` file as it looks to match the name and now your Firebase Unity SDK cannot initialize the Auth.
+- Your Package name/Bundle ID will change to a fixed name : **com.UnityTestRunner.UnityTestRunner**. This will cause problem for `google-services.json` and `GoogleService-Info.plist` file as it looks to match the name and now your Firebase Unity SDK cannot initialize the Auth. (Apparently the Android ones can hold multiple package name but not iOS ones)
 - To fix, please create a new set of Android/iOS app with exactly that test name in the same Firebase App (Press "Add app" button). Then download that new set of `google-services.json` and `GoogleService-Info.plist` and rename the old ones to something else because it search the whole project and pick them up by name. After the test remember to rename switch to the real one.
 
 ## "Oh no REST sucks, why don't you use gRPC?"

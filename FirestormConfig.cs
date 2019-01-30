@@ -174,7 +174,7 @@ namespace E7.Firestorm
             return ao.webRequest;
         }
 
-
+#pragma warning disable 0649
         private class ErrorMessages
         {
             public ErrorMessage[] errors;
@@ -195,6 +195,7 @@ namespace E7.Firestorm
             public string message;
             public string status;
         }
+#pragma warning restore 0649
 
         //For play mode test ON THE REAL DEVICE the DEVELOPMENT_BUILD will be on
         //You will be able to use super user account on those tests.
