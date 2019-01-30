@@ -51,6 +51,7 @@ namespace FirestormTests
             ts.typeArray = new List<object>();
             ts.typeArray.Add("5argonTheGod");
             ts.typeArray.Add(6789);
+            ts.typeArray.Add(DateTime.MaxValue);
             ts.typeArray.Add(true);
             ts.typeArray.Add(11.111);
 
@@ -60,21 +61,29 @@ namespace FirestormTests
             //Debug.Log($"{jsonString}");
 
             var doc = new FirestormDocumentSnapshot(jsonString);
-            var convertBack = doc.ConvertTo<TestStruct>();
+            var getBack = doc.ConvertTo<TestStruct>();
 
-            Assert.That(convertBack.typeTimestamp.Year, Is.EqualTo(1));
-            Assert.That(convertBack.typeTimestamp.Month, Is.EqualTo(1));
-            Assert.That(convertBack.typeTimestamp.Day, Is.EqualTo(1));
-            Assert.That(convertBack.typeTimestamp.TimeOfDay.TotalHours, Is.EqualTo(0));
+            Assert.That(getBack.typeTimestamp.Year, Is.EqualTo(DateTime.MinValue.Year));
+            Assert.That(getBack.typeTimestamp.Month, Is.EqualTo(DateTime.MinValue.Month));
+            Assert.That(getBack.typeTimestamp.Day, Is.EqualTo(DateTime.MinValue.Day));
+            Assert.That(getBack.typeTimestamp.TimeOfDay.TotalHours, Is.EqualTo(DateTime.MinValue.TimeOfDay.TotalHours));
 
-            Assert.That(convertBack.typeString, Is.EqualTo("CYCLONEMAGNUM"));
-            Assert.That(convertBack.typeNumber, Is.EqualTo(55.55));
-            Assert.That(convertBack.typeNumberInt, Is.EqualTo(555));
-            Assert.That(convertBack.typeBoolean, Is.EqualTo(false));
-            Assert.That((string)convertBack.typeArray[0], Is.EqualTo("5argonTheGod"));
-            Assert.That(convertBack.typeArray[1], Is.EqualTo(6789));
-            Assert.That((bool)convertBack.typeArray[2], Is.EqualTo(true));
-            Assert.That((double)convertBack.typeArray[3], Is.EqualTo(11.111));
+            Assert.That(getBack.typeString, Is.EqualTo("CYCLONEMAGNUM"));
+            Assert.That(getBack.typeNumber, Is.EqualTo(55.55));
+            Assert.That(getBack.typeNumberInt, Is.EqualTo(555));
+            Assert.That(getBack.typeBoolean, Is.EqualTo(false));
+            Assert.That((string)getBack.typeArray[0], Is.EqualTo("5argonTheGod"));
+            Assert.That(getBack.typeArray[1], Is.EqualTo(6789));
+            var timeInArray = (DateTime)getBack.typeArray[2];
+
+            Assert.That(timeInArray.Year, Is.EqualTo(DateTime.MaxValue.Year));
+            Assert.That(timeInArray.Month, Is.EqualTo(DateTime.MaxValue.Month));
+            Assert.That(timeInArray.Day, Is.EqualTo(DateTime.MaxValue.Day));
+            Assert.That(timeInArray.TimeOfDay.TotalHours, Is.EqualTo(DateTime.MaxValue.TimeOfDay.TotalHours));
+
+            Assert.That((bool)getBack.typeArray[3], Is.EqualTo(true));
+            Assert.That((double)getBack.typeArray[4], Is.EqualTo(11.111));
+
         }
 
         [Test]

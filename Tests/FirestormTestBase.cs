@@ -45,10 +45,10 @@ namespace FirestormTests
         {
             public string typeString;
             public double typeNumber;
+            public List<object> typeArray; //array is sandwiched at center to increase JSON complexity..
+            public DateTime typeTimestamp;
             public int typeNumberInt;
             public bool typeBoolean;
-            public List<object> typeArray;
-            public DateTime typeTimestamp;
         }
 
         /// <summary>

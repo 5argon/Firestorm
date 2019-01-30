@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.Collections.Generic;
+using System.IO;
 
 [Serializable]
 public struct FirestormDocumentSnapshot
@@ -59,6 +60,7 @@ public struct FirestormDocumentSnapshot
     public FirestormDocumentSnapshot(string jsonString)
     {
         Debug.Log($"Snapshottt from {jsonString}");
+        //File.WriteAllText(Application.dataPath + $"/{UnityEngine.Random.Range(0, 100)}.txt", jsonString);
         IsEmpty = false;
         var jo = JObject.Parse(jsonString);
         if (jo.ContainsKey(nameof(name)) &&

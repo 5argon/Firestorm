@@ -47,7 +47,7 @@ where T : class, new()
 
         string name = (string)reader.Value;
 
-        //Debug.Log($"Processing {propertyName} value string {name}");
+        Debug.Log($"Processing {propertyName} value string {name}");
 
         FieldInfo field = typeof(T).GetField(propertyName, BindingFlags.Instance | BindingFlags.Public);
 
@@ -65,6 +65,7 @@ where T : class, new()
             case "integerValue":
                 reader.Read(); // at the real value now
                 //lol int is a string from Google's server
+                Debug.Log($"INT {reader.Value}");
                 field.SetValue(t, int.Parse(((string)reader.Value)));
                 break;
             case "nullValue":
@@ -111,12 +112,14 @@ where T : class, new()
                             break;
                     }
                     reader.Read(); // at EndObject
-                    //Debug.Log($"YEA {reader.TokenType}");
+                    Debug.Log($"YEA {reader.TokenType}");
                     reader.Read(); //Next StartObject or end array
+                    Debug.Log($"YEA2 {reader.TokenType}");
                 }
                 while (reader.TokenType != JsonToken.EndArray && reader.TokenType != JsonToken.None);
                 //set the list by reflection
                 field.SetValue(t, array);
+                reader.Read(); //EndObject of the array type as a whole
                 break;
             case "geoPointValue":
                 throw new FirestormException($"geoPointValue type not supported! Sorry!");
@@ -126,7 +129,9 @@ where T : class, new()
                 throw new FirestormException($"Did not expecting token type {reader.TokenType} named {name}!");
         }
         reader.Read(); // at EndObject
+        Debug.Log($"YEA3 {reader.TokenType}");
         reader.Read(); // at the next start field or the real EndObject
+        Debug.Log($"YEA4 {reader.TokenType}");
     }
 
     public override void WriteJson(JsonWriter writer, T value, JsonSerializer serializer)
@@ -149,31 +154,11 @@ where T : class, new()
             void WriterDecision(object obj)
             {
                 writer.WriteStartObject();
+                var formatted = FirestormUtility.FormatForValueJson(obj);
                 switch (obj)
                 {
-                    case DateTime dt:
-                        dt = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
-                        writer.WritePropertyName("timestampValue");
-                        writer.WriteValue(dt.ToString("o"));
-                        break;
-                    case int i:
-                        writer.WritePropertyName("integerValue");
-                        writer.WriteValue(i.ToString());
-                        break;
-                    case double dbl:
-                        writer.WritePropertyName("doubleValue");
-                        writer.WriteValue(dbl);
-                        break;
-                    case string st:
-                        writer.WritePropertyName("stringValue");
-                        writer.WriteValue(st);
-                        break;
-                    case bool bl:
-                        writer.WritePropertyName("booleanValue");
-                        writer.WriteValue(bl);
-                        break;
                     case List<object> lo:
-                        writer.WritePropertyName("arrayValue");
+                        writer.WritePropertyName(formatted.typeString);
                         writer.WriteStartObject();
                         writer.WritePropertyName("values");
                         writer.WriteStartArray();
@@ -183,9 +168,12 @@ where T : class, new()
                             WriterDecision(fromArray);
                         }
                         writer.WriteEndArray();
+                        writer.WriteEndObject();
                         break;
                     default:
-                        throw new FirestormException($"Type {obj.GetType().Name} not supported!");
+                        writer.WritePropertyName(formatted.typeString);
+                        writer.WriteValue(formatted.objectForJson);
+                        break;
                 }
                 writer.WriteEndObject();
             }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,18 +31,20 @@ public struct FirestormDocument
     /// 
     /// There is no AddAsync (to make a new document in a collection without naming it) implemented like in the real C# API.
     /// </summary>
-    public async Task<T> SetAsync<T>(T documentData, SetOption setOption) where T : class, new()
+    public async Task SetAsync<T>(T documentData, SetOption setOption) where T : class, new()
     {
         //Check if a document is there or not
-
         var snapshot = await GetSnapshotAsync();
+
+        //Document "name" must not be set when creating a new one. The name should be in query parameter "documentId"
+        //When updating the name must also be blank. It uses the name from REST URL already.
+        string documentJson = JsonConvert.SerializeObject(documentData, Formatting.Indented, new DocumentConverter<T>(""));
+        //File.WriteAllText(Application.dataPath + "/snap.txt", documentJson);
         if (snapshot.IsEmpty)
         {
             //Create a document 
 
-            //Document "name" must not be set when creating a new one. The name should be in query parameter "documentId"
-            string documentJson = JsonConvert.SerializeObject(documentData, Formatting.Indented, new DocumentConverter<T>(""));
-            Debug.Log($"Name {documentName} DOCJ {documentJson}");
+            //Debug.Log($"Name {documentName} DOCJ {documentJson}");
 
             byte[] postData = Encoding.UTF8.GetBytes(documentJson);
 
@@ -50,42 +53,48 @@ public struct FirestormDocument
             {
                 ("documentId",documentName)
             }, postData);
-            return new FirestormDocumentSnapshot(uwr.downloadHandler.text).ConvertTo<T>();
+
+            //It returns the same document but with the generated document ID in the case that createDocument request does not specify a name
+            //We specify a name so there is no point to return any data.
+
+            //return new FirestormDocumentSnapshot(uwr.downloadHandler.text).ConvertTo<T>();
         }
-
-        //If there is a data.. we try to build the correct DocumentMask.
-
-        if (setOption == SetOption.MergeAll)
+        else
         {
-            //lol Android does not support custom verb for UnityWebRequest so we could not use PATCH 
-            //(https://docs.unity3d.com/Manual/UnityWebRequest.html)
-            //"custom verbs are permitted on all platforms except for Android"
-            //(https://stackoverflow.com/questions/19797842/patch-request-android-volley)
-            //(https://answers.unity.com/questions/1230067/trying-to-use-patch-on-a-unitywebrequest-on-androi.html)
+            //If there is a data.. we try to build the correct DocumentMask.
 
-            //TODO : Try using POST with X-HTTP-Method-Override: PATCH and see if Firebase's server supports overriding or not?
-            throw new NotImplementedException();
-        }
-        else if (setOption == SetOption.Overwrite)
-        {
-            //Getting fields of existing data.
-            //Patch a document, using fields from remote combined with local.
-            // Including all local fields ensure update
-            // Including remote fields that does not intersect with local = delete on the server
-            string fieldMaskRemote = snapshot.FieldsDocumentMaskJson();
-            string documentJson = JsonConvert.SerializeObject(documentData, Formatting.Indented, new DocumentConverter<T>(""));
             string fieldMaskLocal = new FirestormDocumentSnapshot(documentJson).FieldsDocumentMaskJson();
-
-            var f1 = JsonConvert.DeserializeObject<DocumentMask>(fieldMaskRemote);
-            var f2 = JsonConvert.DeserializeObject<DocumentMask>(fieldMaskLocal);
+            var localF = JsonConvert.DeserializeObject<DocumentMask>(fieldMaskLocal);
             var mergedFields = new HashSet<string>();
-            foreach (var f in f1.fieldPaths)
+
+            if (setOption == SetOption.MergeAll)
             {
-                mergedFields.Add(f);
+                //Getting fields of only local. The server will touch only field presents in the mask = merging.
+                foreach (var f in localF.fieldPaths)
+                {
+                    mergedFields.Add(f);
+                }
             }
-            foreach (var f in f2.fieldPaths)
+            else if (setOption == SetOption.Overwrite)
             {
-                mergedFields.Add(f);
+                //Getting fields of existing data.
+                //Patch a document, using fields from remote combined with local.
+                // Including all local fields ensure update
+                // Including remote fields that does not intersect with local = delete on the server
+                string fieldMaskRemote = snapshot.FieldsDocumentMaskJson();
+                var remoteF = JsonConvert.DeserializeObject<DocumentMask>(fieldMaskRemote);
+                foreach (var f in remoteF.fieldPaths)
+                {
+                    mergedFields.Add(f);
+                }
+                foreach (var f in localF.fieldPaths)
+                {
+                    mergedFields.Add(f);
+                }
+            }
+            else
+            {
+                throw new NotImplementedException($"Set option {setOption} not implemented");
             }
             // var mergedMasks = new DocumentMask { fieldPaths = mergedFields.ToArray() };
             // var mergedMasksJson = JsonConvert.SerializeObject(mergedMasks);
@@ -97,12 +106,19 @@ public struct FirestormDocument
             byte[] postData = Encoding.UTF8.GetBytes(documentJson);
 
             var updateMaskForUrl = mergedFields.Select(x => ("updateMask.fieldPaths", x)).ToArray();
+
+            //lol Android does not support custom verb for UnityWebRequest so we could not use "PATCH"
+            //(https://docs.unity3d.com/Manual/UnityWebRequest.html)
+            //"custom verbs are permitted on all platforms except for Android"
+            //(https://stackoverflow.com/questions/19797842/patch-request-android-volley)
+            //(https://answers.unity.com/questions/1230067/trying-to-use-patch-on-a-unitywebrequest-on-androi.html)
+
+            //TODO : Try using POST with X-HTTP-Method-Override: PATCH and see if Firebase's server supports overriding or not?
             var uwr = await FirestormConfig.Instance.UWRPatch(stringBuilder.ToString(), updateMaskForUrl, postData);
-            return new FirestormDocumentSnapshot(uwr.downloadHandler.text).ConvertTo<T>();
 
+            //The patch request returns the same document.
+            //return new FirestormDocumentSnapshot(uwr.downloadHandler.text).ConvertTo<T>();
         }
-
-        throw new NotImplementedException($"Set option {setOption} not implemented");
     }
 
     /// <summary>

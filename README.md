@@ -6,7 +6,7 @@ Makeshift Cloud Firestore C# API that works on Unity via pure REST API. Contains
 
 ## Why Cloud Firestore
 
-- Cloud Firestore is described as better than Readtime Database in every way, except that it is in beta and no Unity SDK yet.
+- Cloud Firestore is described as better than Realtime Database in every way, except that it is in beta and no Unity SDK yet.
 - Decision to use Realtime Database or Firestore is a big forked path, since it affects the way you would design as hierarchy with alternating collection-document (Firestore) or JSON tree design with lots of data duplications (RDB). There is probably 0% chance of easy migration. Unity devs will be faced with difficult decision of using RDB now and wait for SDK then having to overhaul design and migrate database, or just use Firestore with Firestorm while waiting for official SDK.
 - The official C# Firestore API is available but Unity is not good with Nuget + it pulls in tons of dependencies that likely cause problem later. Firestorm puts all the work to `UnityWebRequest` to do REST call to ensure compatibility.
 

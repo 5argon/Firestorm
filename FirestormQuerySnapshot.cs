@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 [Serializable]
 public struct FirestormQuerySnapshot 
 {
-    public List<FirestormDocumentSnapshot> documents;
+    private List<FirestormDocumentSnapshot> documents;
     public IEnumerable<FirestormDocumentSnapshot> Documents => documents;
 
     public FirestormQuerySnapshot(string collectionJson)

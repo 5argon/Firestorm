@@ -3,7 +3,7 @@ using Firebase.Auth;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class Firestorm
+public static class Firestorm
 {
     public const string assetMenuName = nameof(Firestorm) + "/";
     public const string restApiBaseUrl = "https://firestore.googleapis.com/v1beta1";
@@ -20,7 +20,7 @@ public class Firestorm
     public static void CreateEditModeInstance()
     {
         DisposeEditModeInstance();
-        appInstance = FirebaseApp.Create(FirebaseApp.DefaultInstance.Options, $"TestInstance {Random.Range(10000, 99999)}");
+        appInstance = FirebaseApp.Create(FirebaseApp.DefaultInstance.Options, $"TestInstance {UnityEngine.Random.Range(10000, 99999)}");
     }
 
     public static void DisposeEditModeInstance() 
