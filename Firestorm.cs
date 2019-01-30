@@ -3,6 +3,7 @@ using Firebase.Auth;
 using UnityEngine;
 using UnityEngine.Networking;
 
+
 public static class Firestorm
 {
     public const string assetMenuName = nameof(Firestorm) + "/";
@@ -51,6 +52,10 @@ public static class Firestorm
                 return authInstance;
             }
         }
+    }
+
+    public static class IndexManager
+    {
     }
 }
 

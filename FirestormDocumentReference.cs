@@ -139,16 +139,9 @@ public struct FirestormDocumentReference
             Debug.Log($"done {uwr.downloadHandler.text}");
             return new FirestormDocumentSnapshot(uwr.downloadHandler.text);
         }
-        catch (FirestormWebRequestException fe)
+        catch (FirestormDocumentNotFoundException)
         {
-            if (fe.ErrorCode == 404)
-            {
-                return FirestormDocumentSnapshot.Empty;
-            }
-            else
-            {
-                throw;
-            }
+            return FirestormDocumentSnapshot.Empty;
         }
     }
 

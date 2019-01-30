@@ -32,3 +32,25 @@ public class FirestormWebRequestException : System.Exception
         System.Runtime.Serialization.SerializationInfo info,
         System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
 }
+
+[System.Serializable]
+public class FirestormPleaseCreateCompositeIndexException : System.Exception
+{
+    public FirestormPleaseCreateCompositeIndexException() { }
+    public FirestormPleaseCreateCompositeIndexException(string message) : base(message) { }
+    public FirestormPleaseCreateCompositeIndexException(string message, System.Exception inner) : base(message, inner) { }
+    protected FirestormPleaseCreateCompositeIndexException(
+        System.Runtime.Serialization.SerializationInfo info,
+        System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
+}
+
+[System.Serializable]
+public class FirestormDocumentNotFoundException : System.Exception
+{
+    public FirestormDocumentNotFoundException() { }
+    public FirestormDocumentNotFoundException(string message) : base(message) { }
+    public FirestormDocumentNotFoundException(string message, System.Exception inner) : base(message, inner) { }
+    protected FirestormDocumentNotFoundException(
+        System.Runtime.Serialization.SerializationInfo info,
+        System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
+}

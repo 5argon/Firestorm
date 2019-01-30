@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Firebase.Auth;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -69,7 +72,7 @@ public partial class FirestormConfig : ScriptableObject
     private UnityWebRequest BuildPost(string path, (string, string)[] queryParameters, byte[] postData)
     {
         var queryUrlBuilder = new StringBuilder();
-        if (queryParameters.Length > 0)
+        if (queryParameters != null && queryParameters.Length > 0)
         {
             queryUrlBuilder.Append("?");
             foreach (var kvp in queryParameters)
@@ -124,7 +127,7 @@ public partial class FirestormConfig : ScriptableObject
     private async Task<UnityWebRequest> SetupAndSendUWRAsync(UnityWebRequest uwr)
     {
         //Debug.Log($"Checking user in the Auth instance {Firestorm.AuthInstance.App.Name} -> {Firestorm.AuthInstance?.CurrentUser?.UserId}");
-        if(Firestorm.AuthInstance.CurrentUser == null)
+        if (Firestorm.AuthInstance.CurrentUser == null)
         {
             throw new FirestormException($"Login with FirebaseAuth first!");
         }
@@ -136,9 +139,60 @@ public partial class FirestormConfig : ScriptableObject
         Debug.Log($"Done! {ao.webRequest.isDone} {ao.webRequest.isHttpError} {ao.webRequest.isNetworkError} {ao.webRequest.error} {ao.webRequest.downloadHandler?.text}");
         if (ao.webRequest.isHttpError || ao.webRequest.isNetworkError)
         {
-            throw new FirestormWebRequestException(uwr, $"UnityWebRequest error : {ao.webRequest.error}");
+            ErrorMessage googleError = default;
+            if (ao.webRequest.isHttpError && ao.webRequest.downloadHandler != null)
+            {
+                //Getting Google's error message
+                var jt = JToken.Parse(ao.webRequest.downloadHandler.text);
+                if(jt.Type == JTokenType.Array)
+                {
+                    jt = jt[0];
+                }
+                else if(jt.Type != JTokenType.Object)
+                {
+                    throw new FirestormException($"Not expecting {jt.Type} from the server..");
+                }
+
+                googleError = jt.ToObject<ErrorMessage>();
+
+                if (googleError != null)
+                {
+                    if (googleError.error.code == 404 && googleError.error.status == "NOT_FOUND")
+                    {
+                        throw new FirestormDocumentNotFoundException(googleError.error.message);
+                    }
+                    if (googleError.error.code == 400 && googleError.error.message.Contains("The query requires an index"))
+                    {
+                        throw new FirestormPleaseCreateCompositeIndexException($"{googleError.error.message}");
+                    }
+                }
+            }
+
+            throw new FirestormWebRequestException(uwr, $"UnityWebRequest error : {ao.webRequest.error}\n{googleError?.ToString()}");
         }
         return ao.webRequest;
+    }
+
+
+    private class ErrorMessages
+    {
+        public ErrorMessage[] errors;
+    }
+
+    /// <summary>
+    /// https://cloud.google.com/apis/design/errors
+    /// </summary>
+    private class ErrorMessage
+    {
+        public Status error;
+        public override string ToString() => $"{error.message}\nStatus code : {error.status}";
+    }
+
+    private class Status
+    {
+        public int code;
+        public string message;
+        public string status;
     }
 
 //For play mode test ON THE REAL DEVICE the DEVELOPMENT_BUILD will be on
