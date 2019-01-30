@@ -11,7 +11,7 @@ public static class Firestorm
     /// <summary>
     /// Start building the collection-document path here.
     /// </summary>
-    public static FirestormCollection Collection(string name) => new FirestormCollection(name);
+    public static FirestormCollectionReference Collection(string name) => new FirestormCollectionReference(name);
 
     //Prevents garbage collection bug
     private static FirebaseApp appInstance;

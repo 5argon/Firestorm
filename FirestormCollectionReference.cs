@@ -1,25 +1,25 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
-public struct FirestormCollection
+public struct FirestormCollectionReference
 {
     internal StringBuilder stringBuilder;
-    public FirestormCollection(string name)
+    public FirestormCollectionReference(string name)
     {
         stringBuilder = new StringBuilder($"/{name}");
     }
 
-    public FirestormCollection(FirestormDocument sb, string name)
+    public FirestormCollectionReference(FirestormDocumentReference sb, string name)
     {
         this.stringBuilder = sb.stringBuilder;
         this.stringBuilder.Append($"/{name}");
     }
 
-    public FirestormDocument Document(string name) => new FirestormDocument(this, name);
+    public FirestormDocumentReference Document(string name) => new FirestormDocumentReference(this, name);
 
     /// <summary>
     /// Get all documents in the collection.
@@ -32,7 +32,7 @@ public struct FirestormCollection
         return new FirestormQuerySnapshot(uwr.downloadHandler.text);
     }
 
-    public async Task<FirestormDocument> AddAsync<T>(T documentData) where T : class, new()
+    public async Task<FirestormDocumentReference> AddAsync<T>(T documentData) where T : class, new()
     {
         throw new NotImplementedException();
     }

@@ -97,19 +97,19 @@ namespace FirestormTests
     }
         ";
 
-        protected FirestormCollection TestCollection => Firestorm.Collection(testCollectionName);
-        protected FirestormDocument TestDocument1 => TestCollection.Document(testDataName1);
-        protected FirestormDocument TestDocument2 => TestCollection.Document(testDataName2);
-        protected FirestormDocument TestDocument3 => TestCollection.Document(testDataName3);
+        protected FirestormCollectionReference TestCollection => Firestorm.Collection(testCollectionName);
+        protected FirestormDocumentReference TestDocument1 => TestCollection.Document(testDataName1);
+        protected FirestormDocumentReference TestDocument2 => TestCollection.Document(testDataName2);
+        protected FirestormDocumentReference TestDocument3 => TestCollection.Document(testDataName3);
 
         /// <summary>
         /// This subcollection is under document 2
         /// </summary>
-        protected FirestormCollection TestSubcollection => TestDocument2.Collection(testSubCollectionName);
-        protected FirestormDocument TestDocument21 => TestSubcollection.Document(testDataName21);
-        protected FirestormDocument TestDocument22 => TestSubcollection.Document(testDataName22);
+        protected FirestormCollectionReference TestSubcollection => TestDocument2.Collection(testSubCollectionName);
+        protected FirestormDocumentReference TestDocument21 => TestSubcollection.Document(testDataName21);
+        protected FirestormDocumentReference TestDocument22 => TestSubcollection.Document(testDataName22);
 
-        protected IEnumerable<FirestormDocument> AllTestDocuments
+        protected IEnumerable<FirestormDocumentReference> AllTestDocuments
         {
             get{
                 yield return TestDocument1;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,12 +9,12 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
-public struct FirestormDocument
+public struct FirestormDocumentReference
 {
     internal StringBuilder stringBuilder;
     private string documentName;
     private string parent;
-    public FirestormDocument(FirestormCollection collection, string name)
+    public FirestormDocumentReference(FirestormCollectionReference collection, string name)
     {
         this.stringBuilder = collection.stringBuilder;
         this.parent = stringBuilder.ToString(); //save the parent collection path before appending.
@@ -22,7 +22,7 @@ public struct FirestormDocument
         this.documentName = name;
     }
 
-    public FirestormCollection Collection(string name) => new FirestormCollection(this, name);
+    public FirestormCollectionReference Collection(string name) => new FirestormCollectionReference(this, name);
 
     /// <summary>
     /// Either make a new document, overwrites or update a subset of fields depending on SetOption.
