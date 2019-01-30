@@ -4,93 +4,96 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.Collections.Generic;
-using System.IO;
 
-[Serializable]
-public struct FirestormDocumentSnapshot
+namespace E7.Firestorm
 {
-    public string name;
-    public DateTime createTime;
-    public DateTime updateTime;
-    public JToken fields;
-    public IEnumerable<JProperty> properties;
-    public bool IsEmpty { private set; get; }
 
-    public static FirestormDocumentSnapshot Empty
+    [Serializable]
+    public struct FirestormDocumentSnapshot
     {
-        get
-        {
-            return new FirestormDocumentSnapshot { IsEmpty = true };
-        }
-    }
+        public string name;
+        public DateTime createTime;
+        public DateTime updateTime;
+        public JToken fields;
+        public IEnumerable<JProperty> properties;
+        public bool IsEmpty { private set; get; }
 
-    public T ConvertTo<T>() where T : class, new()
-    {
-        if (IsEmpty)
+        public static FirestormDocumentSnapshot Empty
         {
-            throw new FirestormException($"The document snapshot is empty, please check for IsEmpty instead of trying to convert into an empty instance.");
-        }
-        var serializer = JsonSerializer.Create(new JsonSerializerSettings
-        {
-            Converters = new JsonConverter[] { new DocumentConverter<T>(name) },
-        }
-        );
-        return fields.ToObject<T>(serializer);
-    }
-
-    /// <summary>
-
-    /// DocumentMask : https://firebase.google.com/docs/firestore/reference/rest/v1beta1/DocumentMask
-    /// </summary>
-    internal string FieldsDocumentMaskJson()
-    {
-        if (IsEmpty)
-        {
-            return JsonConvert.SerializeObject(new DocumentMask());
-        }
-        else
-        {
-            var mask = new DocumentMask { fieldPaths = properties.Select(x => x.Name).ToArray() };
-            var m = JsonConvert.SerializeObject(mask);
-            Debug.Log($"Made mask {m}");
-            return m;
-        }
-    }
-
-    public FirestormDocumentSnapshot(string jsonString)
-    {
-        Debug.Log($"Snapshottt from {jsonString}");
-        //File.WriteAllText(Application.dataPath + $"/{UnityEngine.Random.Range(0, 100)}.txt", jsonString);
-        IsEmpty = false;
-        var jo = JObject.Parse(jsonString);
-        if (jo.ContainsKey(nameof(name)) &&
-            jo.ContainsKey(nameof(fields)))
-        {
-            name = jo[nameof(name)].ToObject<string>();
-            fields = jo[nameof(fields)];
-            properties = fields.Children<JProperty>();
-            if (jo.ContainsKey(nameof(createTime)) &&
-                jo.ContainsKey(nameof(updateTime)))
+            get
             {
-                createTime = jo[nameof(createTime)].ToObject<DateTime>();
-                updateTime = jo[nameof(updateTime)].ToObject<DateTime>();
+                return new FirestormDocumentSnapshot { IsEmpty = true };
+            }
+        }
+
+        public T ConvertTo<T>() where T : class, new()
+        {
+            if (IsEmpty)
+            {
+                throw new FirestormException($"The document snapshot is empty, please check for IsEmpty instead of trying to convert into an empty instance.");
+            }
+            var serializer = JsonSerializer.Create(new JsonSerializerSettings
+            {
+                Converters = new JsonConverter[] { new DocumentConverter<T>(name) },
+            }
+            );
+            return fields.ToObject<T>(serializer);
+        }
+
+        /// <summary>
+
+        /// DocumentMask : https://firebase.google.com/docs/firestore/reference/rest/v1beta1/DocumentMask
+        /// </summary>
+        internal string FieldsDocumentMaskJson()
+        {
+            if (IsEmpty)
+            {
+                return JsonConvert.SerializeObject(new DocumentMask());
             }
             else
             {
-                createTime = default; 
-                updateTime = default; 
+                var mask = new DocumentMask { fieldPaths = properties.Select(x => x.Name).ToArray() };
+                var m = JsonConvert.SerializeObject(mask);
+                Debug.Log($"Made mask {m}");
+                return m;
             }
         }
-        else
+
+        public FirestormDocumentSnapshot(string jsonString)
         {
-            throw new FirestormException($"This object is not a document! {jsonString}");
+            Debug.Log($"Snapshottt from {jsonString}");
+            //File.WriteAllText(Application.dataPath + $"/{UnityEngine.Random.Range(0, 100)}.txt", jsonString);
+            IsEmpty = false;
+            var jo = JObject.Parse(jsonString);
+            if (jo.ContainsKey(nameof(name)) &&
+                jo.ContainsKey(nameof(fields)))
+            {
+                name = jo[nameof(name)].ToObject<string>();
+                fields = jo[nameof(fields)];
+                properties = fields.Children<JProperty>();
+                if (jo.ContainsKey(nameof(createTime)) &&
+                    jo.ContainsKey(nameof(updateTime)))
+                {
+                    createTime = jo[nameof(createTime)].ToObject<DateTime>();
+                    updateTime = jo[nameof(updateTime)].ToObject<DateTime>();
+                }
+                else
+                {
+                    createTime = default;
+                    updateTime = default;
+                }
+            }
+            else
+            {
+                throw new FirestormException($"This object is not a document! {jsonString}");
+            }
         }
+
+        public override string ToString() => $"{name} : {createTime} {updateTime} JSON String {fields.ToString()}";
     }
 
-    public override string ToString() => $"{name} : {createTime} {updateTime} JSON String {fields.ToString()}";
-}
-
-[Serializable]
-public struct FirestormDocumentValue
-{
+    [Serializable]
+    public struct FirestormDocumentValue
+    {
+    }
 }

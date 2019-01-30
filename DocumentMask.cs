@@ -1,8 +1,11 @@
-
-/// <summary>
-/// For converting to JSON
-/// </summary>
-public struct DocumentMask
+namespace E7.Firestorm
 {
-    public string[] fieldPaths;
+    /// <summary>
+    /// For converting to JSON
+    /// </summary>
+    public struct DocumentMask
+    {
+        public string[] fieldPaths;
+    }
+
 }

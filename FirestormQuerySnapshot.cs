@@ -2,30 +2,35 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
-[Serializable]
-public struct FirestormQuerySnapshot 
+namespace E7.Firestorm
 {
-    private List<FirestormDocumentSnapshot> documents;
-    public IEnumerable<FirestormDocumentSnapshot> Documents => documents;
 
-    public FirestormQuerySnapshot(string collectionJson)
+    [Serializable]
+    public struct FirestormQuerySnapshot
     {
-        documents = new List<FirestormDocumentSnapshot>();
-        var jo = JObject.Parse(collectionJson);
-        if(jo.ContainsKey("documents"))
+        private List<FirestormDocumentSnapshot> documents;
+        public IEnumerable<FirestormDocumentSnapshot> Documents => documents;
+
+        public FirestormQuerySnapshot(string collectionJson)
         {
-            foreach(var tk in jo["documents"].Children())
+            documents = new List<FirestormDocumentSnapshot>();
+            var jo = JObject.Parse(collectionJson);
+            if (jo.ContainsKey("documents"))
             {
-                documents.Add(new FirestormDocumentSnapshot(tk.ToString()));
+                foreach (var tk in jo["documents"].Children())
+                {
+                    documents.Add(new FirestormDocumentSnapshot(tk.ToString()));
+                }
+            }
+            else if (jo.HasValues == false)
+            {
+                return;
+            }
+            else
+            {
+                throw new FirestormException($"Did not expect non-empty and not having documents at root..");
             }
         }
-        else if(jo.HasValues == false)
-        {
-            return;
-        }
-        else
-        {
-            throw new FirestormException($"Did not expect non-empty and not having documents at root..");
-        }
     }
+
 }

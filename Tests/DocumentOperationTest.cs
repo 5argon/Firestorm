@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using E7.Firestorm;
 
 namespace FirestormTests
 {

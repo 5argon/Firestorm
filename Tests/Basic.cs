@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using E7.Firestorm;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -17,21 +18,21 @@ namespace FirestormTests
             var fi = FirestormConfig.Instance;
         }
 
-        [Test]
-        public void ServiceAccountJsonReading()
-        {
-            var sa = FirestormConfig.Instance.ServiceAccountPrivateKey;
-            Assert.That(sa.type, Is.Not.Empty);
-            Assert.That(sa.project_id, Is.Not.Empty);
-            Assert.That(sa.private_key_id, Is.Not.Empty);
-            Assert.That(sa.private_key, Is.Not.Empty);
-            Assert.That(sa.client_email, Is.Not.Empty);
-            Assert.That(sa.client_id, Is.Not.Empty);
-            Assert.That(sa.auth_uri, Is.Not.Empty);
-            Assert.That(sa.token_uri, Is.Not.Empty);
-            Assert.That(sa.auth_provider_x509_cert_url, Is.Not.Empty);
-            Assert.That(sa.client_x509_cert_url, Is.Not.Empty);
-        }
+        // [Test]
+        // public void ServiceAccountJsonReading()
+        // {
+        //     var sa = FirestormConfig.Instance.ServiceAccountPrivateKey;
+        //     Assert.That(sa.type, Is.Not.Empty);
+        //     Assert.That(sa.project_id, Is.Not.Empty);
+        //     Assert.That(sa.private_key_id, Is.Not.Empty);
+        //     Assert.That(sa.private_key, Is.Not.Empty);
+        //     Assert.That(sa.client_email, Is.Not.Empty);
+        //     Assert.That(sa.client_id, Is.Not.Empty);
+        //     Assert.That(sa.auth_uri, Is.Not.Empty);
+        //     Assert.That(sa.token_uri, Is.Not.Empty);
+        //     Assert.That(sa.auth_provider_x509_cert_url, Is.Not.Empty);
+        //     Assert.That(sa.client_x509_cert_url, Is.Not.Empty);
+        // }
         
         [UnityTest]
         public IEnumerator TestAwait()

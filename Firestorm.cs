@@ -1,68 +1,62 @@
 using Firebase;
 using Firebase.Auth;
 using UnityEngine;
-using UnityEngine.Networking;
 
-
-public static class Firestorm
+namespace E7.Firestorm
 {
-    public const string assetMenuName = nameof(Firestorm) + "/";
-    public const string restApiBaseUrl = "https://firestore.googleapis.com/v1beta1";
-
-    /// <summary>
-    /// Start building the collection-document path here.
-    /// </summary>
-    public static FirestormCollectionReference Collection(string name) => new FirestormCollectionReference(name);
-
-    //Prevents garbage collection bug
-    private static FirebaseApp appInstance;
-    private static FirebaseAuth authInstance;
-
-    public static void CreateEditModeInstance()
+    public static class Firestorm
     {
-        DisposeEditModeInstance();
-        appInstance = FirebaseApp.Create(FirebaseApp.DefaultInstance.Options, $"TestInstance {UnityEngine.Random.Range(10000, 99999)}");
-    }
+        public const string assetMenuName = nameof(Firestorm) + "/";
+        public const string restApiBaseUrl = "https://firestore.googleapis.com/v1beta1";
 
-    public static void DisposeEditModeInstance() 
-    {
-        //Somehow this crashes Unity lol... the network is left running in the other thread it seems.
-        appInstance?.Dispose();
-    }
+        /// <summary>
+        /// Start building the collection-document path here.
+        /// </summary>
+        public static FirestormCollectionReference Collection(string name) => new FirestormCollectionReference(name);
 
-    public static FirebaseAuth AuthInstance
-    {
-        get
+        //Prevents garbage collection bug
+        private static FirebaseApp appInstance;
+        private static FirebaseAuth authInstance;
+
+        public static void CreateEditModeInstance()
         {
-            if (Application.isPlaying)
+            DisposeEditModeInstance();
+            appInstance = FirebaseApp.Create(FirebaseApp.DefaultInstance.Options, $"TestInstance {UnityEngine.Random.Range(10000, 99999)}");
+        }
+
+        public static void DisposeEditModeInstance()
+        {
+            //Somehow this crashes Unity lol... the network is left running in the other thread it seems.
+            appInstance?.Dispose();
+        }
+
+        public static FirebaseAuth AuthInstance
+        {
+            get
             {
-                appInstance = FirebaseApp.DefaultInstance;
-                authInstance = FirebaseAuth.GetAuth(appInstance);
-                return authInstance;
-            }
-            else
-            {
-                //Firebase said you should not use default instance in editor (edit mode test also)
-                //https://firebase.google.com/docs/unity/setup#desktop_workflow
-                if(appInstance == null)
+                if (Application.isPlaying)
                 {
-                    throw new FirestormException($"You forgot to call CreateEditModeInstance before running in edit mode");
+                    appInstance = FirebaseApp.DefaultInstance;
+                    authInstance = FirebaseAuth.GetAuth(appInstance);
+                    return authInstance;
                 }
-                authInstance = FirebaseAuth.GetAuth(appInstance);
-                return authInstance;
+                else
+                {
+                    //Firebase said you should not use default instance in editor (edit mode test also)
+                    //https://firebase.google.com/docs/unity/setup#desktop_workflow
+                    if (appInstance == null)
+                    {
+                        throw new FirestormException($"You forgot to call CreateEditModeInstance before running in edit mode");
+                    }
+                    authInstance = FirebaseAuth.GetAuth(appInstance);
+                    return authInstance;
+                }
             }
+        }
+
+        public static class IndexManager
+        {
         }
     }
 
-    public static class IndexManager
-    {
-    }
-}
-
-public enum SetOption
-{
-    //Mask field follows the one on the server. So it deletes fields on the server on PATCH request
-    Overwrite,
-    //Mask field follows all of the one to write.
-    MergeAll
 }

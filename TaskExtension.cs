@@ -2,11 +2,13 @@ using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine.Networking;
 
-public static class TaskExtension
+namespace E7.Firestorm
+{
+    public static class TaskExtension
     {
         public static async Task WaitAsync(this UnityWebRequestAsyncOperation uwr)
         {
-            while(uwr.isDone == false)
+            while (uwr.isDone == false)
             {
                 await Task.Yield();
             }
@@ -24,5 +26,4 @@ public static class TaskExtension
             }
         }
     }
-
-
+}

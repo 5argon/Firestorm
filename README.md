@@ -21,9 +21,9 @@ Makeshift Cloud Firestore C# API that works on Unity via pure REST API. Contains
 
 ## Requires
 
-- Unity 2019.1 (may work with 2018.3 but I have enough time to care about backward compatibility sorry..)
-- C# 7.3
-- Firebase Unity SDK : FirebaseAuth, FirebaseApp (it must cache the `FirebaseApp` instance to prevent GC hard crash described in the mid-January patch note)
+- Unity 2019.1 (**should** work with 2018.3 but I have enough time to test backward compatibility sorry..)
+- Latest C#
+- Firebase Unity SDK : FirebaseAuth, FirebaseApp (it must cache the `FirebaseApp` instance to prevent GC hard crash described in the mid-January patch note. If this is fixed, then only FirebaseAuth will be required.)
 - Unity.Tasks that comes with Firebase Unity SDK. The Auth wants it.
 - Newtonsoft.Json
 
@@ -33,7 +33,7 @@ I put the requirement as an "assembly override" in the asmdef explicitly. It req
 
 ## Why not Unity's JsonUtility
 
-It sucks! The JSON from Firestore has polymorphic union fields (see [example](https://firebase.google.com/docs/firestore/reference/rest/v1beta1/Value)) and it is impossible to work with without at least JSON to `Dictionary` support to put the field names as dict key then do reflections etc. I used Json.NET to iterate and peel out the JSON with `JObject` LINQ support and to tailor made a JSON that Firebase would accept.
+It sucks! The JSON from Firestore has polymorphic union fields (see [example](https://firebase.google.com/docs/firestore/reference/rest/v1beta1/Value)) and it is impossible to work with without good iteration method on the JSON. I used Json.NET to iterate and peel out the JSON with `JObject` LINQ support and to tailor made a JSON that Firebase would accept.
 
 ## Limitations
 
@@ -41,16 +41,16 @@ I made this just enough to adopt Firestore as soon as possible. Features are at 
 
 - Type excluded in a Document : Map (Map = dictionary of JSON not map as in world map), Geopoint (LatLng), bytes (use base-64 string instead).
 - Any mentioned types that is in an array. Basically, recursive programming is hard and I don't want to mess with it + my game does not have nested map design. But hey! Array is implemented! A friend list per player for example can be strings in an array.
-- On getting component you must provide a **type generic**. It **must** be a `class` (because it would be easy to do reflection to populate its value). If you would like to receive array, use `List<object>`. You take the risk of casting those objects if they are of different type! It will be reflected by field name of the document to match with what's in your type. The remaining fields are left at default. You cannot substitute any fields with `Dictionary<string, string>`.
-- Transaction not supported. (You cannot do atomic operation that rolls back together when one thing fails)
-- Manual rollback not supported. (There is a REST endpoint for this)
+- On getting component you must provide a concrete **type generic** with all fields known except `List<object>` which is used to receive Firestore array. It **must** be a `class` (because it would be easy to do reflection to populate its value). It will be reflected by field name of the document to match with what's in your type. The remaining fields are left at default. You cannot substitute any fields with, for example, `Dictionary<string, string>`.
+- Transaction not supported. (Used for atomic operation that rolls back together when one thing fails)
+- Manual rollback not supported. (There is actually a REST endpoint for this)
 - Batched write not supported.
 - Ordering not supported.
 - Limiting not supported.
 - Listening for realtime updates not supported.
 - Query cursor/pagination not supported.
 - Offline data not supported.
-- Managing index not supported.
+- Managing index not supported. (It is a long-running operation, not easy to poll for status)
 - Import/export data not supported.
 - No admin API supported. (Use a work around by creating a "super user" with all allowed permission for the Firestore instead of a real service account)
 - Ordering of a query is locked to **ascending**. When creating a composite index please use only ascending index.
@@ -61,9 +61,37 @@ Let's wait for the Unity SDK for those. (They are already all supported in regul
 
 ## How to use
 
-Please look in the test assembly folder for a general idea, I don't have time to write a guide yet.. but it always begin with something like `Firestorm.Collection("c1").Document("d1").Collection("c1-1").Document("d2")._____`. (Use `FirebaseAuth.DefaultInstance` to sign in first! It works on the `CurrentUser`.)
+Please look in the test assembly folder for some general ideas, I don't have time to write a guide yet.. but it always begin with something like `Firestorm.Collection("c1").Document("d1").Collection("c1-1").Document("d2")._____`. (Use `FirebaseAuth.DefaultInstance` to sign in first! It works on the `CurrentUser`.)
 
-When migrating to the real thing later, `Firestorm` would become `FirestoreDatabase` instance got from somewhere. Everything else should be roughly the same. (?)
+When migrating to the real thing later, `Firestorm` would become `FirestoreDatabase` instance you get from somewhere. Everything else should be roughly the same. (?)
+
+## How to run tests/to make sure it works
+
+You will want to be able to pass all tests as database is a sensitive thing and could wreck your game if not careful. (Or if I made mistake somewhere)
+
+The test will run against your **real** Firebase account and **cost real money** as it writes and cleans up the Firestore on every test (but probably not much). There are things that is required to setup beforehand.
+
+- Do all the things that is required to make `FirebaseAuth` works in Unity. Install Unity SDK. Add `google-services.json`, `GoogleService-Info.plist` to project, etc.
+- In the right click create asset menu create an asset of `FirestormConfig` and put it in `Resources` folder.
+- Create a super user account in the Auth control panel.
+- Go to your Firestore rules and add all-allowed rule for super user email like this : `allow read, write: if request.auth.token.email == "super@gmail.com";`
+- Put required data in the `FirestormConfig` file including super user details. This will allow us to run test without relying on including Firebase Admin API.
+- Since index takes several minutes to create I cannot put it in the test without inconvenience. Go create a composite index on collection ID `firestorm-test-collection` with field `a` and `b` as both Ascending. Wait until it finishes.
+- Connect to the internet and you should be able to pass all **Edit Mode** test.
+
+### Play Mode test
+
+Change the `asmdef` from `Editor` only to all platforms. Try and see if all the test can run successfully in play mode. It is a bit different in how it selects `FirebaseApp` instance since edit mode requires a separated instance but playmode will use `DefaultInstance` instead. (But the edit mode instance has `AppOptions` copied from `DefaultInstance` anyways)
+
+### Real device test
+
+The ultimate test. After making all the tests available in Play Mode, you can click the button that says **Run all in player (Android/iOS)**. The game will build now.
+
+But in this build there are caveats :
+
+- You will get `DEVELOPMENT_BUILD` compilation flag. If your game somehow does not build on this button click but builds on normal method, check if your code has something against this precompiler flag or not.
+- Your Package name/Bundle ID will change to a fixed name : "". This will cause problem for `google-services.json` and `GoogleService-Info.plist` file as it looks to match the name and now your Firebase Unity SDK cannot initialize the Auth.
+- To fix, please create a new set of Android/iOS app with exactly that test name in the same Firebase App (Press "Add app" button). Then download that new set of `google-services.json` and `GoogleService-Info.plist` and rename the old ones to something else because it search the whole project and pick them up by name. After the test remember to rename switch to the real one.
 
 ## "Oh no REST sucks, why don't you use gRPC?"
 
@@ -103,4 +131,14 @@ When I do
 nuget install google.cloud.firestore -Prerelease
 ```
 
-I got tons of related Nuget which in turn resolves into gRPC again. I think it is scary and difficult to get it working (at runtime too) so I didn't continue this path either.
+I got tons of related Nuget which in turn resolves into gRPC again. I think it is scary and difficult to get it workinrisky g (at runtime too) so I didn't continue this path either.
+
+# License
+
+The license is MIT as you can see in `LICENSE.txt`, and to stress this is provided as-is without any warranty as said in the MIT license. (I understand that database is kind of a dangerous thing, and my programming on Firestorm is very rough as it is only a temporary solution while I am waiting for the official one.)
+
+# Blatant advertisement
+
+- [Introloop](http://exceed7.com/introloop/) - Easily play looping music with intro section (without physically splitting them) (Unity 2017.0+)
+- [Native Audio](http://exceed7.com/native-audio/) - Lower audio latency via OS's native audio library. (Unity 2017.1+, iOS uses OpenAL / Android uses OpenSL ES)
+- [Native Touch](http://exceed7.com/native-touch/) - Faster touch via callbacks from the OS, with a real hardware timestamp. (Unity 2017.1+, iOS/Android)

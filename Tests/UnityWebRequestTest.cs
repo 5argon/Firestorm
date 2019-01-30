@@ -10,10 +10,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
 using System.IO;
+using E7.Firestorm;
 
 namespace FirestormTests
 {
-
     public class UnityWebRequestTest : FirestormTestBase
     {
         [UnityTest]
