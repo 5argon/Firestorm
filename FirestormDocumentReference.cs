@@ -5,8 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Firebase.Auth;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using LitJson;
 using UnityEngine;
 
 namespace E7.Firestorm
@@ -40,7 +39,7 @@ namespace E7.Firestorm
 
             //Document "name" must not be set when creating a new one. The name should be in query parameter "documentId"
             //When updating the name must also be blank. It uses the name from REST URL already.
-            string documentJson = JsonConvert.SerializeObject(documentData, Formatting.Indented, new DocumentConverter<T>(""));
+            string documentJson = FirestormUtility.WriteJson(documentData, "");
             //File.WriteAllText(Application.dataPath + "/snap.txt", documentJson);
             if (snapshot.IsEmpty)
             {
@@ -66,7 +65,7 @@ namespace E7.Firestorm
                 //If there is a data.. we try to build the correct DocumentMask.
 
                 string fieldMaskLocal = new FirestormDocumentSnapshot(documentJson).FieldsDocumentMaskJson();
-                var localF = JsonConvert.DeserializeObject<DocumentMask>(fieldMaskLocal);
+                var localF = JsonMapper.ToObject<DocumentMask>(fieldMaskLocal);
                 var mergedFields = new HashSet<string>();
 
                 if (setOption == SetOption.MergeAll)
@@ -84,7 +83,7 @@ namespace E7.Firestorm
                     // Including all local fields ensure update
                     // Including remote fields that does not intersect with local = delete on the server
                     string fieldMaskRemote = snapshot.FieldsDocumentMaskJson();
-                    var remoteF = JsonConvert.DeserializeObject<DocumentMask>(fieldMaskRemote);
+                    var remoteF = JsonMapper.ToObject<DocumentMask>(fieldMaskRemote);
                     foreach (var f in remoteF.fieldPaths)
                     {
                         mergedFields.Add(f);

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
+using LitJson;
 
 namespace E7.Firestorm
 {
@@ -14,15 +14,15 @@ namespace E7.Firestorm
         public FirestormQuerySnapshot(string collectionJson)
         {
             documents = new List<FirestormDocumentSnapshot>();
-            var jo = JObject.Parse(collectionJson);
+            var jo = JsonMapper.ToObject(collectionJson);
             if (jo.ContainsKey("documents"))
             {
-                foreach (var tk in jo["documents"].Children())
+                foreach (JsonData tk in jo["documents"])
                 {
-                    documents.Add(new FirestormDocumentSnapshot(tk.ToString()));
+                    documents.Add(new FirestormDocumentSnapshot(tk.ToJson()));
                 }
             }
-            else if (jo.HasValues == false)
+            else if (jo.Count == 0)
             {
                 return;
             }

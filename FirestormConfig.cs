@@ -5,8 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Firebase.Auth;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using LitJson;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -144,17 +143,17 @@ namespace E7.Firestorm
                 if (ao.webRequest.isHttpError && ao.webRequest.downloadHandler != null)
                 {
                     //Getting Google's error message
-                    var jt = JToken.Parse(ao.webRequest.downloadHandler.text);
-                    if (jt.Type == JTokenType.Array)
+                    JsonData jt = JsonMapper.ToObject(ao.webRequest.downloadHandler.text);
+                    if (jt.IsArray)
                     {
                         jt = jt[0];
                     }
-                    else if (jt.Type != JTokenType.Object)
+                    else if (jt.IsObject == false)
                     {
-                        throw new FirestormException($"Not expecting {jt.Type} from the server..");
+                        throw new FirestormException($"Not expecting {jt.GetJsonType()} from the server..");
                     }
 
-                    googleError = JsonUtility.FromJson<ErrorMessage>(jt.ToString());
+                    googleError = JsonMapper.ToObject<ErrorMessage>(jt.ToJson());
 
                     if (googleError != null)
                     {

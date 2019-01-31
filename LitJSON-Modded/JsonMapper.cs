@@ -304,7 +304,7 @@ namespace LitJson
 
         private static object ReadValue (Type inst_type, JsonReader reader)
         {
-            UnityEngine.Debug.Log($"Reading {inst_type.Name} {reader.Token} {reader.Value}");
+            //UnityEngine.Debug.Log($"Reading {inst_type.Name} {reader.Token} {reader.Value}");
             reader.Read ();
 
             if (reader.Token == JsonToken.ArrayEnd)
@@ -336,7 +336,7 @@ namespace LitJson
                 reader.Token == JsonToken.Boolean) {
 
                 Type json_type = reader.Value.GetType ();
-                UnityEngine.Debug.Log($"TYPE {json_type.Name} {underlying_type?.Name} {value_type?.Name}");
+                //UnityEngine.Debug.Log($"TYPE {json_type.Name} {underlying_type?.Name} {value_type?.Name}");
 
                 if (value_type.IsAssignableFrom (json_type))
                 {
@@ -405,11 +405,11 @@ namespace LitJson
                 Type elem_type;
 
                 if (! t_data.IsArray) {
-                    UnityEngine.Debug.Log($"OK ACT {inst_type.Name} {t_data.ElementType.Name}");
+                    //UnityEngine.Debug.Log($"OK ACT {inst_type.Name} {t_data.ElementType.Name}");
                     list = (IList) Activator.CreateInstance (inst_type);
                     elem_type = t_data.ElementType;
                 } else {
-                    UnityEngine.Debug.Log("OK AL");
+                    //UnityEngine.Debug.Log("OK AL");
                     list = new ArrayList ();
                     elem_type = inst_type.GetElementType ();
                 }
@@ -422,10 +422,10 @@ namespace LitJson
                     list.Add (item);
                 }
 
-                UnityEngine.Debug.Log($"--- FIN --- {list.GetType().Name}");
+                //UnityEngine.Debug.Log($"--- FIN --- {list.GetType().Name}");
 
                 if (t_data.IsArray) {
-                    UnityEngine.Debug.Log("CRE");
+                    //UnityEngine.Debug.Log("CRE");
                     int n = list.Count;
                     instance = Array.CreateInstance (elem_type, n);
 
@@ -447,14 +447,14 @@ namespace LitJson
                         break;
 
                     string property = (string) reader.Value;
-                    UnityEngine.Debug.Log($"Prop {property}");
+                    //UnityEngine.Debug.Log($"Prop {property}");
 
                     if (t_data.Properties.ContainsKey (property)) {
                         PropertyMetadata prop_data =
                             t_data.Properties[property];
 
                         if (prop_data.IsField) {
-                            UnityEngine.Debug.Log($"FIELD");
+                            //UnityEngine.Debug.Log($"FIELD {prop_data.Type.Name}");
                             ((FieldInfo) prop_data.Info).SetValue (
                                 instance, ReadValue (prop_data.Type, reader));
                         } else {
@@ -463,7 +463,7 @@ namespace LitJson
 
                             if (p_info.CanWrite)
                             {
-                            UnityEngine.Debug.Log($"PROP WRITE");
+                            //UnityEngine.Debug.Log($"PROP WRITE");
                                 p_info.SetValue (
                                     instance,
                                     ReadValue (prop_data.Type, reader),
@@ -471,7 +471,7 @@ namespace LitJson
                             }
                             else
                             {
-                            UnityEngine.Debug.Log($"PROP");
+                            //UnityEngine.Debug.Log($"PROP");
                                 ReadValue (prop_data.Type, reader);
                             }
                         }
@@ -479,19 +479,20 @@ namespace LitJson
                     } else {
                         if (! t_data.IsDictionary) {
                             //Hack so object is a dictionary anyways! haha!
+                            if (! reader.SkipNonMembers) {
+                                throw new JsonException (String.Format (
+                                        "The type {0} doesn't have the " +
+                                        "property '{1}'",
+                                        inst_type, property));
+                            }
                             instance = new Dictionary<string, object>();
-                            // if (! reader.SkipNonMembers) {
-                            //     throw new JsonException (String.Format (
-                            //             "The type {0} doesn't have the " +
-                            //             "property '{1}'",
-                            //             inst_type, property));
                             // } else {
                             //     UnityEngine.Debug.Log($"SKIP");
                             //     ReadSkip (reader);
                             //     continue;
                             // }
                         }
-                        UnityEngine.Debug.Log($"IDICT");
+                        //UnityEngine.Debug.Log($"IDICT");
                         ((IDictionary) instance).Add (
                             property, ReadValue (
                                 t_data.ElementType, reader));
@@ -501,7 +502,7 @@ namespace LitJson
 
             }
 
-            UnityEngine.Debug.Log($"Returning {instance}");
+            //UnityEngine.Debug.Log($"Returning {instance}");
 
             return instance;
         }

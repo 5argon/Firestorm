@@ -4,8 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using LitJson;
 using UnityEngine;
 
 namespace E7.Firestorm
@@ -49,7 +48,7 @@ namespace E7.Firestorm
         /// <typeparam name="string">A Firebase-generated new document ID</typeparam>
         public async Task<string> AddAsync<T>(T documentData) where T : class, new()
         {
-            string documentJson = JsonConvert.SerializeObject(documentData, Formatting.Indented, new DocumentConverter<T>(""));
+            string documentJson = FirestormUtility.WriteJson(documentData, "");
             byte[] postData = Encoding.UTF8.GetBytes(documentJson);
 
             //The URL must NOT include document name
@@ -124,8 +123,8 @@ namespace E7.Firestorm
                 }
             };
 
-            string postJson = JsonConvert.SerializeObject(rq, Formatting.Indented);
-            //File.WriteAllText(Application.dataPath + $"/{UnityEngine.Random.Range(0, 100)}.txt", postJson);
+            string postJson = JsonMapper.ToJson(rq);
+            //File.WriteAllText(Application.dataPath + $"/LITPOST{UnityEngine.Random.Range(0, 100)}.txt", postJson);
             byte[] postData = Encoding.UTF8.GetBytes(postJson);
 
             //Path is the parent of this collection.
@@ -133,13 +132,22 @@ namespace E7.Firestorm
             //File.WriteAllText(Application.dataPath + $"/{UnityEngine.Random.Range(0, 100)}.txt", uwr.downloadHandler.text);
 
             //Make the format looks like the one came back from "list" REST API
-            var ja = JArray.Parse(uwr.downloadHandler.text);
-            var newJo = JObject.FromObject(new
+            JsonData jd = JsonMapper.ToObject(uwr.downloadHandler.text);
+
+            //First layer is json array
+            List<string> collect = new List<string>();
+            foreach (JsonData arrayItem in jd)
             {
-                documents = ja.Children<JObject>().Where(x => x.ContainsKey("document")).Select(x => x["document"].ToObject<object>())
-            });
-            //Debug.Log($"this is new jo {newJo.ToString()}");
-            return new FirestormQuerySnapshot(newJo.ToString());
+                if (arrayItem.ContainsKey("document"))
+                {
+                    collect.Add(arrayItem["document"].ToJson());
+                }
+            }
+
+            string newJo = "{ \"documents\" : [ " + string.Join(",", collect) + " ] }";
+
+            Debug.Log($"this is new jo {newJo}");
+            return new FirestormQuerySnapshot(newJo);
         }
 
         private struct RunQuery

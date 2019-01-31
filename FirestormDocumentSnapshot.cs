@@ -1,7 +1,5 @@
 using System;
 using UnityEngine;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Linq;
 using LitJson;
 
@@ -66,12 +64,12 @@ namespace E7.Firestorm
         {
             if (IsEmpty)
             {
-                return JsonConvert.SerializeObject(new DocumentMask());
+                return JsonMapper.ToJson(new DocumentMask());
             }
             else
             {
                 var mask = new DocumentMask { fieldPaths = this.document.fields.Keys.ToArray() };
-                var m = JsonConvert.SerializeObject(mask);
+                var m = JsonMapper.ToJson(mask);
                 Debug.Log($"Made mask {m}");
                 return m;
             }
@@ -79,7 +77,7 @@ namespace E7.Firestorm
 
         public FirestormDocumentSnapshot(string jsonString)
         {
-            Debug.Log($"Snapshottt from {jsonString}");
+            Debug.Log($"Snapshot from {jsonString}");
             //File.WriteAllText(Application.dataPath + $"/{UnityEngine.Random.Range(0, 100)}.txt", jsonString);
             IsEmpty = false;
 
@@ -131,10 +129,10 @@ namespace E7.Firestorm
                         writer.WriteArrayEnd();
                         break;
                     default:
-                        Debug.Log($"AHA {valueText} {value} {value?.GetType().Name}");
+                        //Debug.Log($"AHA {valueText} {value} {value?.GetType().Name}");
                         string casted = (string)value;
                         writer.Write(casted);
-                        Debug.Log($"AHAhh {valueText} {value}");
+                        //Debug.Log($"AHAhh {valueText} {value}");
                         break;
                 }
             }

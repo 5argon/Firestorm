@@ -9,8 +9,7 @@
     "precompiledReferences": [
         "Firebase.App.dll",
         "Firebase.Auth.dll",
-        "Unity.Tasks.dll",
-        "Newtonsoft.Json.dll"
+        "Unity.Tasks.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],

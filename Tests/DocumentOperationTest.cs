@@ -173,9 +173,16 @@ namespace FirestormTest
                 Assert.That(abc.b, Is.EqualTo("hi"));
                 Assert.That(abc.c, Is.EqualTo(55.555));
 
-                var ab = snapshot.ConvertTo<TestDataAB>();
-                Assert.That(ab.a, Is.EqualTo(31), "It is fine to convert to data type with less fields");
-                Assert.That(ab.b, Is.EqualTo("hi"), "It is fine to convert to data type with less fields");
+                try
+                {
+                    var ab = snapshot.ConvertTo<TestDataAB>();
+                    Assert.Fail("The type must be exact, it cannot be a subset of original data either");
+                    // Assert.That(ab.a, Is.EqualTo(31), "It is fine to convert to data type with less fields");
+                    // Assert.That(ab.b, Is.EqualTo("hi"), "It is fine to convert to data type with less fields");
+                }
+                catch(Exception)
+                {
+                }
             }
         }
 
@@ -271,12 +278,12 @@ namespace FirestormTest
                 ts.typeArray = new List<object>();
                 ts.typeArray.Add("5argonTheGod");
                 ts.typeArray.Add(6789);
-                ts.typeArray.Add(DateTime.MaxValue);
+                DateTime dt = DateTime.MinValue + TimeSpan.FromHours(1);
+                ts.typeArray.Add(dt);
                 ts.typeArray.Add(true);
                 ts.typeArray.Add(11.111);
 
                 await TestDocument1.SetAsync<TestStruct>(ts, SetOption.Overwrite);
-                Debug.Log($"WRITTEN");
                 var getBack = (await TestDocument1.GetSnapshotAsync()).ConvertTo<TestStruct>();
 
                 Assert.That(getBack.typeTimestamp.Year, Is.EqualTo(DateTime.MinValue.Year));
@@ -290,16 +297,17 @@ namespace FirestormTest
                 Assert.That(getBack.typeBoolean, Is.EqualTo(false));
                 Assert.That((string)getBack.typeArray[0], Is.EqualTo("5argonTheGod"));
                 Assert.That(getBack.typeArray[1], Is.EqualTo(6789));
-                var timeInArray = (DateTime)getBack.typeArray[2];
+                Debug.Log($"{(string)getBack.typeArray[2]}");
+                var timeInArray = DateTime.Parse((string)getBack.typeArray[2]).ToUniversalTime();
 
-                Assert.That(timeInArray.Year, Is.EqualTo(DateTime.MaxValue.Year));
-                Assert.That(timeInArray.Month, Is.EqualTo(DateTime.MaxValue.Month));
-                Assert.That(timeInArray.Day, Is.EqualTo(DateTime.MaxValue.Day));
-                Assert.That(timeInArray.TimeOfDay.TotalHours, Is.EqualTo(DateTime.MaxValue.TimeOfDay.TotalHours).Within(0.00001), 
-                "Allowed Google to round off some decimals places in the returned JSON");
+                Assert.That(timeInArray.Year, Is.EqualTo(dt.Year));
+                Assert.That(timeInArray.Month, Is.EqualTo(dt.Month));
+                Assert.That(timeInArray.Day, Is.EqualTo(dt.Day));
+                Assert.That(timeInArray.TimeOfDay.TotalHours, Is.EqualTo(dt.TimeOfDay.TotalHours));
 
                 Assert.That((bool)getBack.typeArray[3], Is.EqualTo(true));
                 Assert.That((double)getBack.typeArray[4], Is.EqualTo(11.111));
+
             }
         }
 
