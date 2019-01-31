@@ -3,20 +3,34 @@ using UnityEngine;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using LitJson;
+
+using ValueObject = System.Collections.Generic.Dictionary<string, object>;
 using System.Collections.Generic;
 
 namespace E7.Firestorm
 {
+    public class ArrayData
+    {
+        public ValueObject[] values;
+    }
 
     [Serializable]
     public struct FirestormDocumentSnapshot
     {
-        public string name;
-        public DateTime createTime;
-        public DateTime updateTime;
-        public JToken fields;
-        public IEnumerable<JProperty> properties;
+        private FirestormDocument document;
+        private string formattedDataJson;
+
+        public string Name => document.name;
+        public FirestormDocument Document => document;
+
+        // public string name;
+        // public DateTime createTime;
+        // public DateTime updateTime;
+        // public JToken fields;
+        //public IEnumerable<JProperty> properties;
         public bool IsEmpty { private set; get; }
+
 
         public static FirestormDocumentSnapshot Empty
         {
@@ -32,12 +46,16 @@ namespace E7.Firestorm
             {
                 throw new FirestormException($"The document snapshot is empty, please check for IsEmpty instead of trying to convert into an empty instance.");
             }
-            var serializer = JsonSerializer.Create(new JsonSerializerSettings
-            {
-                Converters = new JsonConverter[] { new DocumentConverter<T>(name) },
-            }
-            );
-            return fields.ToObject<T>(serializer);
+
+            //Leave it to LitJSON, we have formatted the json to be ready for convert.
+            return JsonMapper.ToObject<T>(formattedDataJson);
+
+            // var serializer = JsonSerializer.Create(new JsonSerializerSettings
+            // {
+            //     Converters = new JsonConverter[] { new DocumentConverter<T>(name) },
+            // }
+            // );
+            //return JsonMapper.ToObject<T>(
         }
 
         /// <summary>
@@ -52,7 +70,7 @@ namespace E7.Firestorm
             }
             else
             {
-                var mask = new DocumentMask { fieldPaths = properties.Select(x => x.Name).ToArray() };
+                var mask = new DocumentMask { fieldPaths = this.document.fields.Keys.ToArray() };
                 var m = JsonConvert.SerializeObject(mask);
                 Debug.Log($"Made mask {m}");
                 return m;
@@ -64,36 +82,90 @@ namespace E7.Firestorm
             Debug.Log($"Snapshottt from {jsonString}");
             //File.WriteAllText(Application.dataPath + $"/{UnityEngine.Random.Range(0, 100)}.txt", jsonString);
             IsEmpty = false;
-            var jo = JObject.Parse(jsonString);
-            if (jo.ContainsKey(nameof(name)) &&
-                jo.ContainsKey(nameof(fields)))
+
+            this.document = JsonMapper.ToObject<FirestormDocument>(jsonString);
+
+            //Write in a format that can be map to any object by LitJSON
+            var writer = new LitJson.JsonWriter();
+            writer.PrettyPrint = true;
+            writer.WriteObjectStart();
+            foreach (var field in document.fields.Keys)
             {
-                name = jo[nameof(name)].ToObject<string>();
-                fields = jo[nameof(fields)];
-                properties = fields.Children<JProperty>();
-                if (jo.ContainsKey(nameof(createTime)) &&
-                    jo.ContainsKey(nameof(updateTime)))
+                var insideValueText = document.fields[field].First().Key;
+                var insideValue = document.fields[field].First().Value;
+                writer.WritePropertyName(field);
+                ValueTextToWrite(insideValueText, insideValue);
+            }
+            writer.WriteObjectEnd();
+
+            formattedDataJson =  writer.ToString();
+            Debug.Log($"{formattedDataJson}");
+
+            void ValueTextToWrite(string valueText, object value)
+            {
+                if(value is JsonData jd)
                 {
-                    createTime = jo[nameof(createTime)].ToObject<DateTime>();
-                    updateTime = jo[nameof(updateTime)].ToObject<DateTime>();
+                    value = (JsonData)jd;
                 }
-                else
+
+                switch (valueText)
                 {
-                    createTime = default;
-                    updateTime = default;
+                    case "integerValue":
+                        //Integer is dangerous because it came as string of number
+                        writer.Write(int.Parse((string)value));
+                        break;
+                    case "doubleValue":
+                        writer.Write((double)value);
+                        break;
+                    case "booleanValue":
+                        writer.Write((bool)value);
+                        break;
+                    case "arrayValue":
+                        writer.WriteArrayStart();
+                        JsonData al = (JsonData)((Dictionary<string, object>)value)["values"];
+                        foreach(JsonData a in al)
+                        {
+                            //If you put array in array it may explode here
+                            ValueTextToWrite(a.Keys.First(), a[a.Keys.First()].UnderlyingPrimitive());
+                        }
+                        writer.WriteArrayEnd();
+                        break;
+                    default:
+                        Debug.Log($"AHA {valueText} {value} {value?.GetType().Name}");
+                        string casted = (string)value;
+                        writer.Write(casted);
+                        Debug.Log($"AHAhh {valueText} {value}");
+                        break;
                 }
             }
-            else
-            {
-                throw new FirestormException($"This object is not a document! {jsonString}");
-            }
+
+            //var jo = JObject.Parse(jsonString);
+
+            // if (jo.ContainsKey(nameof(name)) &&
+            //     jo.ContainsKey(nameof(fields)))
+            // {
+            //     name = (string)jo[nameof(name)];
+            //     fields = jo[nameof(fields)];
+            //     properties = fields.Children<JProperty>();
+            //     if (jo.ContainsKey(nameof(createTime)) &&
+            //         jo.ContainsKey(nameof(updateTime)))
+            //     {
+            //         createTime = jo[nameof(createTime)].ToObject<DateTime>();
+            //         updateTime = jo[nameof(updateTime)].ToObject<DateTime>();
+            //     }
+            //     else
+            //     {
+            //         createTime = default;
+            //         updateTime = default;
+            //     }
+            // }
+            // else
+            // {
+            //     throw new FirestormException($"This object is not a document! {jsonString}");
+            // }
         }
 
-        public override string ToString() => $"{name} : {createTime} {updateTime} JSON String {fields.ToString()}";
+        public override string ToString() => $"{document.name} : {document.createTime} {document.updateTime} Fields {document.fields.ToString()}";
     }
 
-    [Serializable]
-    public struct FirestormDocumentValue
-    {
-    }
 }

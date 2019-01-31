@@ -12,7 +12,7 @@ using System.Text;
 using System.IO;
 using E7.Firestorm;
 
-namespace FirestormTests
+namespace FirestormTest
 {
     public class UnityWebRequestTest : FirestormTestBase
     {

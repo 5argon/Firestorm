@@ -6,7 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using E7.Firestorm;
 
-namespace FirestormTests
+namespace FirestormTest
 {
     public class CollectionOperationTest : FirestormTestBase
     {

@@ -56,7 +56,7 @@ namespace E7.Firestorm
             var uwr = await FirestormConfig.Instance.UWRPost(stringBuilder.ToString(), new (string, string)[]
             {
             }, postData);
-            return new FirestormDocumentSnapshot(uwr.downloadHandler.text).name;
+            return new FirestormDocumentSnapshot(uwr.downloadHandler.text).Name;
         }
 
         /// <summary>
@@ -157,10 +157,10 @@ namespace E7.Firestorm
             //public Order[] orderBy;
         }
 
-        private struct Order
-        {
-            public FieldReference field;
-        }
+        // private struct Order
+        // {
+        //     public FieldReference field;
+        // }
 
         private struct CollectionSelector
         {

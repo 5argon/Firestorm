@@ -25,7 +25,7 @@ Makeshift Cloud Firestore C# API that works on Unity via pure REST API. Contains
 - Latest C#
 - Firebase Unity SDK : FirebaseAuth, FirebaseApp (it must cache the `FirebaseApp` instance to prevent GC hard crash described in the mid-January patch note. If this is fixed, then only FirebaseAuth will be required.)
 - Unity.Tasks that comes with Firebase Unity SDK. The Auth wants it.
-- Newtonsoft.Json
+- LitJSON
 
 I put the requirement as an "assembly override" in the asmdef explicitly. It requires 4 `dll` total :
 
@@ -34,6 +34,20 @@ I put the requirement as an "assembly override" in the asmdef explicitly. It req
 ## Why not Unity's JsonUtility
 
 It sucks! The JSON from Firestore has polymorphic union fields (see [example](https://firebase.google.com/docs/firestore/reference/rest/v1beta1/Value)) and it is impossible to work with without good iteration method on the JSON. I used Json.NET to iterate and peel out the JSON with `JObject` LINQ support and to tailor made a JSON that Firebase would accept.
+
+
+## Why not Newtonsoft Json.NET
+
+It might be top-quality fast and reliable thanks to millions of users, but at its core it uses `DynamicMethod`. It does not work on platform like Android. If you use it, at the end you might encounter : 
+
+```cs
+  at Newtonsoft.Json.Utilities.DynamicReflectionDelegateFactory.CreateDynamicMethod (System.String name, System.Type returnType, System.Type[] parameterTypes, System.Type owner) [0x00000] in /_/Src/Newtonsoft.Json/Utilities/DynamicReflectionDelegateFactory.cs:45 
+
+  at Newtonsoft.Json.Utilities.DynamicReflectionDelegateFactory.CreateDefaultConstructor[T] (System.Type type) [0x00000] in /_/Src/Newtonsoft.Json/Utilities/DynamicReflectionDelegateFactory.cs:244
+
+```
+
+And if you look at the [source](https://github.com/JamesNK/Newtonsoft.Json/blob/master/Src/Newtonsoft.Json.Tests/Utilities/DynamicReflectionDelegateFactoryTests.cs) around there are full of dynamic method creation, particulary creating constructor of the class to deserialize to.
 
 ## Limitations
 

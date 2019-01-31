@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using E7.Firestorm;
 
-namespace FirestormTests
+namespace FirestormTest
 {
     public class FirestormTestBase
     {
@@ -81,6 +81,9 @@ namespace FirestormTests
                 ""stringValue"": ""in the array!""
               },
               {
+                ""timestampValue"": ""2018-02-16T14:09:04.978706Z"" 
+              },
+              {
                 ""integerValue"": ""5678""
               },
               {
@@ -88,9 +91,6 @@ namespace FirestormTests
               }
             ]
           }
-        },
-        ""typeNull"": {
-          ""nullValue"": null
         }
       },
       ""createTime"": ""2019-01-26T10:18:04.978706Z"",

@@ -154,7 +154,7 @@ namespace E7.Firestorm
                         throw new FirestormException($"Not expecting {jt.Type} from the server..");
                     }
 
-                    googleError = jt.ToObject<ErrorMessage>();
+                    googleError = JsonUtility.FromJson<ErrorMessage>(jt.ToString());
 
                     if (googleError != null)
                     {
@@ -169,26 +169,33 @@ namespace E7.Firestorm
                     }
                 }
 
-                throw new FirestormWebRequestException(uwr, $"UnityWebRequest error : {ao.webRequest.error}\n{googleError?.ToString()}");
+                string googleErrorString = "";
+                if(googleError!= null)
+                {
+                    googleErrorString = $"{googleError.error.message}\nStatus code : {googleError.error.status}";
+                }
+
+                throw new FirestormWebRequestException(uwr, $"UnityWebRequest error : {ao.webRequest.error}\n{googleError}");
             }
             return ao.webRequest;
         }
 
 #pragma warning disable 0649
-        private class ErrorMessages
-        {
-            public ErrorMessage[] errors;
-        }
+        // private class ErrorMessages
+        // {
+        //     public ErrorMessage[] errors;
+        // }
 
         /// <summary>
         /// https://cloud.google.com/apis/design/errors
         /// </summary>
+        [Serializable]
         private class ErrorMessage
         {
             public Status error;
-            public override string ToString() => $"{error.message}\nStatus code : {error.status}";
         }
 
+        [Serializable]
         private class Status
         {
             public int code;
