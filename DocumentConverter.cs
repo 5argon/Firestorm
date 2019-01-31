@@ -12,6 +12,7 @@ namespace E7.Firestorm
     public class DocumentConverter<T> : JsonConverter<T>
     where T : class, new()
     {
+
         private string fullDocumentPath;
         public DocumentConverter(string fullDocumentPath)
         {
