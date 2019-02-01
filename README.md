@@ -2,7 +2,15 @@
 
 ![icon](.icon.png)
 
-Makeshift Cloud Firestore C# API that works on Unity via pure REST API. Contains only basic functions.
+Makeshift Cloud Firestore C# API that works with Unity via REST API. Contains only basic functions. "Makeshift" means I wrote everything very hurriedly. I am ready to deprecate all of this when the real thing came out.
+
+# Status
+
+- Editor : All tests passed. If you only care about development with CFS and not the deploy version, you can use this now for the time being.
+- iOS : I don't have 64-bit devices with me. The latest version of Unity has a hard crash bug when built to 32-bit device.
+- Android : It should not be able to use PATCH header from `UnityWebRequest`. I am planning to send POST to a custom script in Cloud Function for it to do PATCH request instead. The official Unity SDK would not have this problem since it should relies on gRPC + Protobuf message instead of REST.
+- There are tons of unprofessional `Debug.Log` left in the code currently, planned to remove once I can get everything work on iOS and Android.
+- Right now I am focusing on editor-only work that wrap over Firestorm, so not going to make it work on the real device for now since Firestorm is fully usable in editor right now. I am guessing in March the official Unity SDK would come out and if that is the case then I won't lose as much time reinventing the wheel.
 
 ## Why Cloud Firestore
 
@@ -27,9 +35,19 @@ Makeshift Cloud Firestore C# API that works on Unity via pure REST API. Contains
 - Unity.Tasks that comes with Firebase Unity SDK. The Auth wants it.
 - LitJSON
 
-I put the requirement as an "assembly override" in the asmdef explicitly. It requires 4 `dll` total :
+I put the requirement as an "assembly override" in the asmdef explicitly. It requires 3 `dll` total :
+- `Firebase.App.dll`
+- `Firebase.Auth.dll`
+- `Unity.Tasks.dll`
 
-![ss](.ss1.png)
+LitJSON is baked in the package. It is literally "little" that I could embed it in with my modifications. (60KB)
+
+## Receiving data with LitJSON
+
+After you got the document snapshot, `snapshot.ConvertTo<T>` will change JSON into your C# data container. How that works is according to LitJSON and may not be the same as the real upcoming SDK. Things to watch out : 
+
+- To receive CFS array you use `List<object>`. However, since all in this list are object LitJSON don't know which type it should convert to and boxed by `object`. For example if you have an array containing integer, double, timestamp, you will get integer as string and timestamp as string as that was what Google is sending from the server. Double is a number. Boolean is correctly a boolean. For plain fields, receiving into `DateTime` will get you `DateTime` correctly as expected as LitJson can see the type and parse the string accordingly.
+- Look at LitJson test to see what can receive what : https://github.com/LitJSON/litjson/blob/develop/test/JsonMapperTest.cs
 
 ## Why not Unity's JsonUtility
 
@@ -47,7 +65,7 @@ It might be top-quality fast and reliable thanks to millions of users, but at it
 
 ```
 
-And if you look at the [source](https://github.com/JamesNK/Newtonsoft.Json/blob/master/Src/Newtonsoft.Json.Tests/Utilities/DynamicReflectionDelegateFactoryTests.cs) around there are full of dynamic method creation, particulary creating constructor of the class to deserialize to.
+And if you look at the [source](https://github.com/JamesNK/Newtonsoft.Json/blob/master/Src/Newtonsoft.Json/Utilities/DynamicReflectionDelegateFactory.cs) you can see a lot of `DynamicMethod` usage. From what I see it is trying to synthesize constructor to even a concrete type that I have everything defined beforehand. So looks like no escape.
 
 ## Limitations
 
@@ -106,6 +124,7 @@ But in this build there are caveats :
 - You will get `DEVELOPMENT_BUILD` compilation flag. If your game somehow does not build on this button click but builds on normal method, check if your code has something against this precompiler flag or not.
 - Your Package name/Bundle ID will change to a fixed name : **com.UnityTestRunner.UnityTestRunner**. This will cause problem for `google-services.json` and `GoogleService-Info.plist` file as it looks to match the name and now your Firebase Unity SDK cannot initialize the Auth. (Apparently the Android ones can hold multiple package name but not iOS ones)
 - To fix, please create a new set of Android/iOS app with exactly that test name in the same Firebase App (Press "Add app" button). Then download that new set of `google-services.json` and `GoogleService-Info.plist` and rename the old ones to something else because it search the whole project and pick them up by name. After the test remember to rename switch to the real one.
+- Anyways, currently real device test is failing for reasons I stated earlier.
 
 ## "Oh no REST sucks, why don't you use gRPC?"
 
