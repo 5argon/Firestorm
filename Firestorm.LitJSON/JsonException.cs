@@ -12,7 +12,7 @@
 using System;
 
 
-namespace LitJson
+namespace E7.Firestorm.LitJson
 {
     public class JsonException :
 #if NETSTANDARD1_5

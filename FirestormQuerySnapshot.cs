@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using LitJson;
+using E7.Firestorm.LitJson;
 
 namespace E7.Firestorm
 {

@@ -9,7 +9,7 @@
 #endregion
 
 
-namespace LitJson
+namespace E7.Firestorm.LitJson
 {
     internal enum ParserToken
     {

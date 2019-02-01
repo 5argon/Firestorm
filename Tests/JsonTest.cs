@@ -6,7 +6,7 @@ using E7.Firestorm;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using UnityEngine;
-using LitJson;
+using E7.Firestorm.LitJson;
 using System.Collections;
 
 namespace FirestormTest
@@ -75,7 +75,7 @@ namespace FirestormTest
             Assert.That(ts.typeNumberInt, Is.EqualTo(1234));
             Assert.That(ts.typeBoolean, Is.EqualTo(true));
             Assert.That((string)ts.typeArray[0], Is.EqualTo("in the array!"));
-            Assert.That((string)ts.typeArray[1], Is.EqualTo("2018-02-16T14:09:04.978706Z"), "Because a list of object, it could not tell LitJSON that this one should be DateTime. You get a string instead.");
+            Assert.That((string)ts.typeArray[1], Is.EqualTo("2018-02-16T14:09:04.978706Z"), "Because a list of object is the receiver, it could not tell LitJSON that this one should be DateTime. You get a string date time instead.");
             Assert.That(ts.typeArray[2], Is.EqualTo(5678));
             Assert.That((bool)ts.typeArray[3], Is.EqualTo(false));
         }
@@ -134,7 +134,7 @@ namespace FirestormTest
         public void DocumentMask()
         {
             var mask = new DocumentMask { fieldPaths = new string[] { "a", "b", "c" } };
-            var fields = JsonConvert.SerializeObject(mask);
+            var fields = JsonMapper.ToJson(mask);
             Assert.That(fields, Is.EqualTo(@"{""fieldPaths"":[""a"",""b"",""c""]}"));
         }
     }

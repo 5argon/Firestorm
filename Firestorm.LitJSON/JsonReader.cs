@@ -15,8 +15,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 
-
-namespace LitJson
+namespace E7.Firestorm.LitJson
 {
     public enum JsonToken
     {

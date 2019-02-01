@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Firebase.Auth;
-using LitJson;
+using E7.Firestorm.LitJson;
 using UnityEngine;
 using UnityEngine.Networking;
 

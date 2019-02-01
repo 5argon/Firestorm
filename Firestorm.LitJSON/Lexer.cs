@@ -8,14 +8,12 @@
  **/
 #endregion
 
-
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-
-namespace LitJson
+namespace E7.Firestorm.LitJson
 {
     internal class FsmContext
     {
@@ -24,7 +22,6 @@ namespace LitJson
         public Lexer L;
         public int   StateStack;
     }
-
 
     internal class Lexer
     {

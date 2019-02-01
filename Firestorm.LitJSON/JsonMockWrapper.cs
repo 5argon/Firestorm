@@ -15,7 +15,7 @@ using System.Collections;
 using System.Collections.Specialized;
 
 
-namespace LitJson
+namespace E7.Firestorm.LitJson
 {
     public class JsonMockWrapper : IJsonWrapper
     {

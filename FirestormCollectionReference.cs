@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using LitJson;
+using E7.Firestorm.LitJson;
 using UnityEngine;
 
 namespace E7.Firestorm

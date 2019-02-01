@@ -16,7 +16,11 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 
-namespace LitJson
+/// <summary>
+/// Firestorm.LitJson is a modified version of LitJson to put dict of <string,object> in place that was skipped before.
+/// Also parse the date time in universal format. (Trailing Z)
+/// </summary>
+namespace E7.Firestorm.LitJson
 {
     internal struct PropertyMetadata
     {

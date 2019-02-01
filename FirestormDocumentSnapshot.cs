@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 using System.Linq;
-using LitJson;
+using E7.Firestorm.LitJson;
 
 using ValueObject = System.Collections.Generic.Dictionary<string, object>;
 using System.Collections.Generic;
@@ -84,7 +84,7 @@ namespace E7.Firestorm
             this.document = JsonMapper.ToObject<FirestormDocument>(jsonString);
 
             //Write in a format that can be map to any object by LitJSON
-            var writer = new LitJson.JsonWriter();
+            var writer = new JsonWriter();
             writer.PrettyPrint = true;
             writer.WriteObjectStart();
             foreach (var field in document.fields.Keys)

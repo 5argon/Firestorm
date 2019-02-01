@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using E7.Firestorm.LitJson;
 
 namespace E7.Firestorm
 {
-
     public static class FirestormUtility
     {
         public static (string typeString, object objectForJson) FormatForValueJson(object toFormat)
@@ -31,7 +31,7 @@ namespace E7.Firestorm
 
         public static string WriteJson<T>(T value, string fullDocumentPath)
         {
-            var writer= new LitJson.JsonWriter();
+            var writer= new JsonWriter();
             writer.PrettyPrint = true;
 
             writer.WriteObjectStart();
