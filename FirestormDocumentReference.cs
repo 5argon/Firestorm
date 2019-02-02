@@ -5,10 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Firebase.Auth;
-using E7.Firestorm.LitJson;
+using E7.Firebase.LitJson;
 using UnityEngine;
 
-namespace E7.Firestorm
+namespace E7.Firebase
 {
     public struct FirestormDocumentReference
     {

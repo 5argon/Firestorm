@@ -1,12 +1,12 @@
 using System;
 using UnityEngine;
 using System.Linq;
-using E7.Firestorm.LitJson;
+using E7.Firebase.LitJson;
 
 using ValueObject = System.Collections.Generic.Dictionary<string, object>;
 using System.Collections.Generic;
 
-namespace E7.Firestorm
+namespace E7.Firebase
 {
     public class ArrayData
     {

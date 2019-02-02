@@ -2,11 +2,11 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using E7.Firestorm;
+using E7.Firebase;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using UnityEngine;
-using E7.Firestorm.LitJson;
+using E7.Firebase.LitJson;
 using System.Collections;
 
 namespace FirestormTest

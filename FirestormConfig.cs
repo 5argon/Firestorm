@@ -5,11 +5,11 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Firebase.Auth;
-using E7.Firestorm.LitJson;
+using E7.Firebase.LitJson;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace E7.Firestorm
+namespace E7.Firebase
 {
     [CreateAssetMenu(menuName = Firestorm.assetMenuName + nameof(FirestormConfig))]
     public partial class FirestormConfig : ScriptableObject

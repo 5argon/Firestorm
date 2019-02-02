@@ -1,4 +1,4 @@
-namespace E7.Firestorm
+namespace E7.Firebase
 {
     /// <summary>
     /// For converting to JSON

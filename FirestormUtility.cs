@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using E7.Firestorm.LitJson;
+using E7.Firebase.LitJson;
 
-namespace E7.Firestorm
+namespace E7.Firebase
 {
     public static class FirestormUtility
     {

@@ -1,13 +1,13 @@
-using Firebase;
+﻿using Firebase;
 using Firebase.Auth;
 using UnityEngine;
 
-namespace E7.Firestorm
+namespace E7.Firebase
 {
     public static class Firestorm
     {
-        public const string assetMenuName = nameof(Firestorm) + "/";
-        public const string restApiBaseUrl = "https://firestore.googleapis.com/v1beta1";
+        internal const string assetMenuName = nameof(Firebase) + "/";
+        internal const string restApiBaseUrl = "https://firestore.googleapis.com/v1beta1";
 
         /// <summary>
         /// Start building the collection-document path here.
@@ -53,10 +53,5 @@ namespace E7.Firestorm
                 }
             }
         }
-
-        public static class IndexManager
-        {
-        }
     }
-
 }

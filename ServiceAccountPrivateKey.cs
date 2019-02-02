@@ -1,6 +1,6 @@
 using System;
 
-namespace E7.Firestorm
+namespace E7.Firebase
 {
     //This was once needed, but I decided to not depends on the service account anymore to run tests.
 

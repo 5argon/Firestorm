@@ -4,7 +4,7 @@ using UnityEngine.TestTools;
 using NUnit.Framework;
 using System.Linq;
 using System.Collections.Generic;
-using E7.Firestorm;
+using E7.Firebase;
 
 namespace FirestormTest
 {

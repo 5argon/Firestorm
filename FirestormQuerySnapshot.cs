@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using E7.Firestorm.LitJson;
+using E7.Firebase.LitJson;
 
-namespace E7.Firestorm
+namespace E7.Firebase
 {
 
     [Serializable]

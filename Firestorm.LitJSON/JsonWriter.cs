@@ -16,7 +16,7 @@ using System.IO;
 using System.Text;
 
 
-namespace E7.Firestorm.LitJson
+namespace E7.Firebase.LitJson
 {
     internal enum Condition
     {

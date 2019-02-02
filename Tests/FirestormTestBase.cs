@@ -8,7 +8,7 @@ using System.Linq;
 using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
-using E7.Firestorm;
+using E7.Firebase;
 
 namespace FirestormTest
 {

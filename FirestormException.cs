@@ -1,6 +1,6 @@
 using UnityEngine.Networking;
 
-namespace E7.Firestorm
+namespace E7.Firebase
 {
 
     [System.Serializable]

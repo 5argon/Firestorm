@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using ValueObject = System.Collections.Generic.Dictionary<string, object>;
 
-namespace E7.Firestorm
+namespace E7.Firebase
 {
     public struct FirestormDocument
     {

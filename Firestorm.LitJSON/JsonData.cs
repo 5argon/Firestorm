@@ -17,7 +17,7 @@ using System.Collections.Specialized;
 using System.IO;
 
 
-namespace E7.Firestorm.LitJson
+namespace E7.Firebase.LitJson
 {
     public class JsonData : IJsonWrapper, IEquatable<JsonData>
     {

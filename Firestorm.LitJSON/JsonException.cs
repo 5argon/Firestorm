@@ -12,7 +12,7 @@
 using System;
 
 
-namespace E7.Firestorm.LitJson
+namespace E7.Firebase.LitJson
 {
     public class JsonException :
 #if NETSTANDARD1_5

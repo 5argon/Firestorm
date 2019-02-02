@@ -2,7 +2,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine.Networking;
 
-namespace E7.Firestorm
+namespace E7.Firebase
 {
     public static class TaskExtension
     {
