@@ -48,8 +48,17 @@ namespace FirestormTest
             public double typeNumber;
             public List<object> typeArray; //array is sandwiched at center to increase JSON complexity..
             public DateTime typeTimestamp;
+            public TestStructInner typeMap;
             public int typeNumberInt;
             public bool typeBoolean;
+        }
+
+        protected class TestStructInner
+        {
+            public DateTime typeTimestampMap;
+            public string typeStringMap;
+            public double typeNumberMap;
+            public bool typeBooleanMap;
         }
 
         /// <summary>
@@ -70,6 +79,24 @@ namespace FirestormTest
         },
         ""typeBoolean"": {
           ""booleanValue"": true
+        },
+        ""typeMap"": {
+          ""mapValue"": {
+                ""fields"" : {
+                    ""typeTimestampMap"": {
+                        ""timestampValue"": ""2016-02-13T19:00:00Z""
+                    },
+                    ""typeStringMap"": {
+                        ""stringValue"": ""omgmapmap""
+                    },
+                    ""typeNumberMap"": {
+                        ""doubleValue"": 98.76
+                    },
+                    ""typeBooleanMap"": {
+                        ""booleanValue"": true
+                    }
+                }
+            }
         },
         ""typeNumberInt"": {
           ""integerValue"": ""1234""

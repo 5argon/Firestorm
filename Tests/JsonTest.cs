@@ -17,7 +17,7 @@ namespace FirestormTest
         public void LitJsonHandlesSupportedType()
         {
             var doc = JsonMapper.ToObject<FirestormDocument>(sampleDocumentJson);
-            Debug.Log($"{doc.createTime} {doc.updateTime}");
+
             Assert.That(doc.createTime.Year, Is.EqualTo(2019));
             Assert.That(doc.createTime.Month, Is.EqualTo(1));
             Assert.That(doc.createTime.Day, Is.EqualTo(26));
@@ -69,6 +69,14 @@ namespace FirestormTest
             Assert.That(ts.typeTimestamp.Month, Is.EqualTo(1));
             Assert.That(ts.typeTimestamp.Day, Is.EqualTo(27));
             Assert.That(ts.typeTimestamp.TimeOfDay.TotalHours, Is.EqualTo(17));
+
+            Assert.That(ts.typeMap.typeTimestampMap.Year, Is.EqualTo(2016));
+            Assert.That(ts.typeMap.typeTimestampMap.Month, Is.EqualTo(2));
+            Assert.That(ts.typeMap.typeTimestampMap.Day, Is.EqualTo(13));
+            Assert.That(ts.typeMap.typeTimestampMap.TimeOfDay.Hours, Is.EqualTo(19));
+            Assert.That(ts.typeMap.typeStringMap, Is.EqualTo("omgmapmap"));
+            Assert.That(ts.typeMap.typeNumberMap, Is.EqualTo(98.76));
+            Assert.That(ts.typeMap.typeBooleanMap, Is.EqualTo(true));
 
             Assert.That(ts.typeString, Is.EqualTo("hey"));
             Assert.That(ts.typeNumber, Is.EqualTo(23.44));

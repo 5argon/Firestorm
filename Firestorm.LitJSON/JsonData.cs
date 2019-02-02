@@ -527,6 +527,7 @@ namespace E7.Firebase.LitJson
         #region IEnumerable Methods
         IEnumerator IEnumerable.GetEnumerator ()
         {
+            UnityEngine.Debug.Log($"OMG");
             return EnsureCollection ().GetEnumerator ();
         }
         #endregion

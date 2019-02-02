@@ -128,11 +128,25 @@ namespace E7.Firebase
                         }
                         writer.WriteArrayEnd();
                         break;
+                    case "mapValue":
+                        writer.WriteObjectStart();
+                        JsonData alObj = (JsonData)((Dictionary<string, object>)value)["fields"];
+                        Debug.Log($"{alObj} {alObj.Count} {alObj.IsArray} {alObj.IsObject}");
+                        foreach (KeyValuePair<string, JsonData> a in alObj)
+                        {
+                            writer.WritePropertyName(a.Key);
+                            JsonData mapFieldData = a.Value;
+                            var firstKey = mapFieldData.Keys.First();
+                            Debug.Log($"Working on {a.Key} {firstKey} {mapFieldData[firstKey].UnderlyingPrimitive()} object map");
+                            ValueTextToWrite(firstKey, mapFieldData[firstKey].UnderlyingPrimitive());
+                        }
+                        writer.WriteObjectEnd();
+                        break;
                     default:
-                        //Debug.Log($"AHA {valueText} {value} {value?.GetType().Name}");
+                        Debug.Log($"AHA {valueText} {value} {value?.GetType().Name}");
                         string casted = (string)value;
                         writer.Write(casted);
-                        //Debug.Log($"AHAhh {valueText} {value}");
+                        Debug.Log($"AHAhh {valueText} {value}");
                         break;
                 }
             }
