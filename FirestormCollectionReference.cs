@@ -48,7 +48,7 @@ namespace E7.Firebase
         /// <typeparam name="string">A Firebase-generated new document ID</typeparam>
         public async Task<string> AddAsync<T>(T documentData) where T : class, new()
         {
-            string documentJson = FirestormUtility.WriteJson(documentData, "");
+            string documentJson = FirestormUtility.ToJsonDocument(documentData, "");
             byte[] postData = Encoding.UTF8.GetBytes(documentJson);
 
             //The URL must NOT include document name

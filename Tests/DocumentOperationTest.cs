@@ -275,6 +275,16 @@ namespace FirestormTest
                 ts.typeNumber = 55.55;
                 ts.typeNumberInt = 555;
                 ts.typeBoolean = false;
+
+                var minPlus2 = DateTime.MinValue + TimeSpan.FromHours(2);
+                ts.typeMap = new TestStructInner
+                {
+                    typeTimestampMap = minPlus2,
+                    typeBooleanMap = true,
+                    typeNumberMap = 777.88,
+                    typeStringMap = "nemii"
+                };
+
                 ts.typeArray = new List<object>();
                 ts.typeArray.Add("5argonTheGod");
                 ts.typeArray.Add(6789);
@@ -283,6 +293,7 @@ namespace FirestormTest
                 ts.typeArray.Add(true);
                 ts.typeArray.Add(11.111);
 
+
                 await TestDocument1.SetAsync<TestStruct>(ts, SetOption.Overwrite);
                 var getBack = (await TestDocument1.GetSnapshotAsync()).ConvertTo<TestStruct>();
 
@@ -290,6 +301,14 @@ namespace FirestormTest
                 Assert.That(getBack.typeTimestamp.Month, Is.EqualTo(DateTime.MinValue.Month));
                 Assert.That(getBack.typeTimestamp.Day, Is.EqualTo(DateTime.MinValue.Day));
                 Assert.That(getBack.typeTimestamp.TimeOfDay.TotalHours, Is.EqualTo(DateTime.MinValue.TimeOfDay.TotalHours));
+
+                Assert.That(getBack.typeMap.typeTimestampMap.Year, Is.EqualTo(minPlus2.Year));
+                Assert.That(getBack.typeMap.typeTimestampMap.Month, Is.EqualTo(minPlus2.Month));
+                Assert.That(getBack.typeMap.typeTimestampMap.Day, Is.EqualTo(minPlus2.Day));
+                Assert.That(getBack.typeMap.typeTimestampMap.TimeOfDay.TotalHours, Is.EqualTo(minPlus2.TimeOfDay.TotalHours));
+                Assert.That(getBack.typeMap.typeBooleanMap, Is.EqualTo(true));
+                Assert.That(getBack.typeMap.typeNumberMap, Is.EqualTo(777.88));
+                Assert.That(getBack.typeMap.typeStringMap, Is.EqualTo("nemii"));
 
                 Assert.That(getBack.typeString, Is.EqualTo("CYCLONEMAGNUM"));
                 Assert.That(getBack.typeNumber, Is.EqualTo(55.55));

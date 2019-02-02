@@ -39,7 +39,7 @@ namespace E7.Firebase
 
             //Document "name" must not be set when creating a new one. The name should be in query parameter "documentId"
             //When updating the name must also be blank. It uses the name from REST URL already.
-            string documentJson = FirestormUtility.WriteJson(documentData, "");
+            string documentJson = FirestormUtility.ToJsonDocument(documentData, "");
             //File.WriteAllText(Application.dataPath + "/snap.txt", documentJson);
             if (snapshot.IsEmpty)
             {
