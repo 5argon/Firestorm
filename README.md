@@ -71,7 +71,7 @@ And if you look at the [source](https://github.com/JamesNK/Newtonsoft.Json/blob/
 
 I made this just enough to adopt Firestore as soon as possible. Features are at bare minimum. Code is a mess and also performance is really BAD. (Sent JSON are even indented just so that debugging would be easy..)
 
-- Type excluded in a Document : Map (Map = dictionary of JSON not map as in world map), Geopoint (LatLng), bytes (use base-64 string instead).
+- Type excluded in a Document : Map inside a map (Map = dictionary of JSON not map as in world map), Geopoint (LatLng), bytes (use base-64 string instead). Map for 1 level in a document is fine.
 - Any mentioned types that is in an array. Basically, recursive programming is hard and I don't want to mess with it + my game does not have nested map design. But hey! Array is implemented! A friend list per player for example can be strings in an array.
 - On getting component you must provide a concrete **type generic** with all fields known except `List<object>` which is used to receive Firestore array. It **must** be a `class` (because it would be easy to do reflection to populate its value). It will be reflected by field name of the document to match with what's in your type. The remaining fields are left at default. You cannot substitute any fields with, for example, `Dictionary<string, string>`.
 - Transaction not supported. (Used for atomic operation that rolls back together when one thing fails)

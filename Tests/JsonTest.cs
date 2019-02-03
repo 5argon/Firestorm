@@ -9,6 +9,8 @@ using UnityEngine;
 using E7.Firebase.LitJson;
 using System.Collections;
 
+using Yo = System.Collections.Generic.Dictionary<string, object>;
+
 namespace FirestormTest
 {
     public class JsonTest : FirestormTestBase
@@ -33,6 +35,12 @@ namespace FirestormTest
             Assert.That(doc.fields["typeNumber"]["doubleValue"], Is.EqualTo(23.44));
             Assert.That(doc.fields["typeNumberInt"]["integerValue"], Is.EqualTo("1234"));
             Assert.That(doc.fields["typeBoolean"]["booleanValue"], Is.EqualTo(true));
+
+            // Test nested fields (lol what a mess)
+            Assert.That((string)((JsonData)((JsonData)((Yo)(doc.fields["typeMap"]["mapValue"]))["fields"])["typeTimestampMap"])["timestampValue"], Is.EqualTo("2016-02-13T19:00:00Z"));
+            Assert.That((string)((JsonData)((JsonData)((Yo)(doc.fields["typeMap"]["mapValue"]))["fields"])["typeStringMap"])["stringValue"], Is.EqualTo("omgmapmap"));
+            Assert.That((double)((JsonData)((JsonData)((Yo)(doc.fields["typeMap"]["mapValue"]))["fields"])["typeNumberMap"])["doubleValue"], Is.EqualTo(98.76));
+            Assert.That((bool)((JsonData)((JsonData)((Yo)(doc.fields["typeMap"]["mapValue"]))["fields"])["typeBooleanMap"])["booleanValue"], Is.EqualTo(true));
 
             var arrayContent = (Dictionary<string,object>)doc.fields["typeArray"]["arrayValue"];
             Assert.That(arrayContent, Is.Not.Null);

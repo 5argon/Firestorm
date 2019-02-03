@@ -496,10 +496,9 @@ namespace E7.Firebase.LitJson
                             //     continue;
                             // }
                         }
-                        //UnityEngine.Debug.Log($"IDICT");
-                        ((IDictionary) instance).Add (
-                            property, ReadValue (
-                                t_data.ElementType, reader));
+                        var recursiveRead = ReadValue(t_data.ElementType, reader);
+                        //UnityEngine.Debug.Log($"IDICT Adding {property} {recursiveRead.GetType().Name}");
+                        ((IDictionary)instance).Add(property, recursiveRead);
                     }
 
                 }

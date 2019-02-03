@@ -57,7 +57,6 @@ namespace E7.Firebase
         }
 
         /// <summary>
-
         /// DocumentMask : https://firebase.google.com/docs/firestore/reference/rest/v1beta1/DocumentMask
         /// </summary>
         internal string FieldsDocumentMaskJson()
@@ -68,7 +67,17 @@ namespace E7.Firebase
             }
             else
             {
-                var mask = new DocumentMask { fieldPaths = this.document.fields.Keys.ToArray() };
+                //handle nested fields!!
+                var topLevelFields = this.document.fields.Where(x => x.Value.Keys.First() != "mapValue").Select(x => x.Key);
+                var mapFields = this.document.fields.Where(x => x.Value.Keys.First() == "mapValue")
+                .SelectMany(x =>
+                {
+                    string parentFieldName = x.Key;
+                    var mapFieldNames = ((JsonData)((ValueObject)x.Value["mapValue"])["fields"]).Keys;
+                    return mapFieldNames.Select(y => $"{parentFieldName}.{y}");
+                });
+
+                var mask = new DocumentMask { fieldPaths = topLevelFields.Concat(mapFields).ToArray() };
                 var m = JsonMapper.ToJson(mask);
                 Debug.Log($"Made mask {m}");
                 return m;
@@ -131,22 +140,22 @@ namespace E7.Firebase
                     case "mapValue":
                         writer.WriteObjectStart();
                         JsonData alObj = (JsonData)((Dictionary<string, object>)value)["fields"];
-                        Debug.Log($"{alObj} {alObj.Count} {alObj.IsArray} {alObj.IsObject}");
+                        //Debug.Log($"{alObj} {alObj.Count} {alObj.IsArray} {alObj.IsObject}");
                         foreach (KeyValuePair<string, JsonData> a in alObj)
                         {
                             writer.WritePropertyName(a.Key);
                             JsonData mapFieldData = a.Value;
                             var firstKey = mapFieldData.Keys.First();
-                            Debug.Log($"Working on {a.Key} {firstKey} {mapFieldData[firstKey].UnderlyingPrimitive()} object map");
+                            //Debug.Log($"Working on {a.Key} {firstKey} {mapFieldData[firstKey].UnderlyingPrimitive()} object map");
                             ValueTextToWrite(firstKey, mapFieldData[firstKey].UnderlyingPrimitive());
                         }
                         writer.WriteObjectEnd();
                         break;
                     default:
-                        Debug.Log($"AHA {valueText} {value} {value?.GetType().Name}");
+                        //Debug.Log($"AHA {valueText} {value} {value?.GetType().Name}");
                         string casted = (string)value;
                         writer.Write(casted);
-                        Debug.Log($"AHAhh {valueText} {value}");
+                        //Debug.Log($"AHAhh {valueText} {value}");
                         break;
                 }
             }

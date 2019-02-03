@@ -32,6 +32,29 @@ namespace FirestormTest
             public string b;
             public double c;
         }
+
+        protected class TestDataNestedAB
+        {
+            public int a;
+            public string b;
+            public double c;
+            public TestDataAB nested;
+        }
+        protected class TestDataNestedAC
+        {
+            public int a;
+            public string b;
+            public double c;
+            public TestDataAC nested;
+        }
+        protected class TestDataNestedABC
+        {
+            public int a;
+            public string b;
+            public double c;
+            public TestDataABC nested;
+        }
+
         const string testCollectionName = "firestorm-test-collection";
 
         const string testDataName1 = "firestorm-test-data-1";

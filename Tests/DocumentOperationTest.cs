@@ -261,6 +261,96 @@ namespace FirestormTest
         }
 
         [UnityTest]
+        public IEnumerator SetAsyncNestedMergeAll()
+        {
+            yield return T().YieldWait(); async Task T()
+            {
+                var startingData = new TestDataNestedAB
+                {
+                    a = 11,
+                    b = "22",
+                    c = 33.333,
+                    nested = new TestDataAB
+                    {
+                        a = 44,
+                        b = "55",
+                    },
+                };
+                var newData = new TestDataNestedAC
+                {
+                    a = 11,
+                    b = "22",
+                    c = 33.333,
+                    nested = new TestDataAC
+                    {
+                        a = 66,
+                        c = 77.777,
+                    },
+                };
+
+                await EnsureCleanTestCollection();
+                await SignInSuperUser();
+                await TestDocument1.SetAsync(startingData, SetOption.MergeAll);
+                await TestDocument1.SetAsync(newData, SetOption.MergeAll);
+                var snapshot = await TestDocument1.GetSnapshotAsync();
+
+                Assert.That(snapshot.IsEmpty, Is.Not.True);
+                var td = snapshot.ConvertTo<TestDataNestedABC>();
+                Assert.That(td.a, Is.EqualTo(11));
+                Assert.That(td.b, Is.EqualTo("22"));
+                Assert.That(td.c, Is.EqualTo(33.333));
+                Assert.That(td.nested.a, Is.EqualTo(66));
+                Assert.That(td.nested.b, Is.EqualTo("55"), "This inner field untouched because of merge!");
+                Assert.That(td.nested.c, Is.EqualTo(77.777));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator SetAsyncNestedOverwrite()
+        {
+            yield return T().YieldWait(); async Task T()
+            {
+                var startingData = new TestDataNestedAB
+                {
+                    a = 11,
+                    b = "22",
+                    c = 33.333,
+                    nested = new TestDataAB
+                    {
+                        a = 44,
+                        b = "55",
+                    },
+                };
+                var newData = new TestDataNestedAC
+                {
+                    a = 11,
+                    b = "22",
+                    c = 33.333,
+                    nested = new TestDataAC
+                    {
+                        a = 66,
+                        c = 77.777,
+                    },
+                };
+
+                await EnsureCleanTestCollection();
+                await SignInSuperUser();
+                await TestDocument1.SetAsync(startingData, SetOption.Overwrite);
+                await TestDocument1.SetAsync(newData, SetOption.Overwrite);
+                var snapshot = await TestDocument1.GetSnapshotAsync();
+
+                Assert.That(snapshot.IsEmpty, Is.Not.True);
+                var td = snapshot.ConvertTo<TestDataNestedABC>();
+                Assert.That(td.a, Is.EqualTo(11));
+                Assert.That(td.b, Is.EqualTo("22"));
+                Assert.That(td.c, Is.EqualTo(33.333));
+                Assert.That(td.nested.a, Is.EqualTo(66));
+                Assert.That(td.nested.b, Is.Null, "Overwritten");
+                Assert.That(td.nested.c, Is.EqualTo(77.777));
+            }
+        }
+
+        [UnityTest]
         public IEnumerator AllSupportedTypesSurvivalTest()
         {
             yield return T().YieldWait(); async Task T()
