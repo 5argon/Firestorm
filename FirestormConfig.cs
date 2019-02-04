@@ -216,6 +216,11 @@ namespace E7.Firebase
         //This two string would not be in the real build according to preprocessor.
         public string superUserEmail;
         public string superUserPassword;
+
+        /// <summary>
+        /// To execute cloud function to clean up the test space, this string must match with what's in the deployed funtion.
+        /// </summary>
+        public string testSecret;
 #pragma warning restore 0649
 
         // public ServiceAccountPrivateKey ServiceAccountPrivateKey

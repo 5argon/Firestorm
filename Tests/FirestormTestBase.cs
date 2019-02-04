@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine.TestTools;
 using Firebase.Auth;
 using Firebase;
+using Firebase.Functions;
 using System;
 using System.Linq;
 using NUnit.Framework;
@@ -12,7 +13,7 @@ using E7.Firebase;
 
 namespace FirestormTest
 {
-    public class FirestormTestBase
+    public class FirestormTestDataStructure
     {
         protected class TestDataAB
         {
@@ -162,7 +163,8 @@ namespace FirestormTest
 
         protected IEnumerable<FirestormDocumentReference> AllTestDocuments
         {
-            get{
+            get
+            {
                 yield return TestDocument1;
                 yield return TestDocument2;
                 yield return TestDocument3;
@@ -170,86 +172,57 @@ namespace FirestormTest
                 yield return TestDocument22;
             }
         }
+    }
+
+    public class FirestormTestBase : FirestormTestDataStructure
+    {
 
         /// <summary>
-        /// Will sign in and sign out to do the clean up
+        /// Clean up using cloud function. Also delete and create the super user.
         /// </summary>
-        protected async Task EnsureCleanTestCollection()
+        private async Task SetUpFirestoreForTest(bool isTearDown)
         {
-            await SignInSuperUser();
-
-            //Debug.Log($"(User still here? {Firestorm.AuthInstance.CurrentUser})");
-            await Task.WhenAll(AllTestDocuments.Select(x => x.DeleteAsync()));
-            //Debug.Log($"Cleaning done! (User still here? {Firestorm.AuthInstance.CurrentUser})");
-
-            //The collection is automatically removed when you delete all documents.
-            var querySs = await TestCollection.GetSnapshotAsync();
-            //Debug.Log($"Test!");
-            Firestorm.AuthInstance.SignOut();
-            //Debug.Log($"Signout done!");
+            var ff = FirebaseFunctions.GetInstance(Firestorm.AuthInstance.App);
+            var testCleanUp = ff.GetHttpsCallable("firestormTestCleanUp");
+            var callResult = await testCleanUp.CallAsync(new Dictionary<string, object>
+            {
+                ["isTearDown"] = isTearDown,
+                ["testSecret"] = FirestormConfig.Instance.testSecret,
+                ["superUserId"] = FirestormConfig.Instance.superUserEmail,
+                ["superUserPassword"] = FirestormConfig.Instance.superUserPassword,
+            });
         }
 
-        protected async Task EnsureSuperUserAccountCreated()
+        private async Task SignInSuperUser()
         {
             var config = FirestormConfig.Instance;
-            await EnsureUserCreated(config.superUserEmail, config.superUserPassword);
-        }
-
-        protected async Task SignInSuperUser()
-        {
-            var config = FirestormConfig.Instance;
-            // Firestorm.AuthInstance.IdTokenChanged -= IdTokenChanged;
-            // Firestorm.AuthInstance.StateChanged -= LoginChanged;
-            // Firestorm.AuthInstance.IdTokenChanged += IdTokenChanged;
-            // Firestorm.AuthInstance.StateChanged += LoginChanged;
             FirebaseUser fu = await Firestorm.AuthInstance.SignInWithEmailAndPasswordAsync(config.superUserEmail, config.superUserPassword);
             //Debug.Log($"Signed in to super user {Firestorm.AuthInstance?.CurrentUser.UserId}");
         }
 
-        // public void IdTokenChanged(object sender, EventArgs e)
-        // {
-        //     Debug.Log($"Token changed!!");
-        // }
-
-        // public void LoginChanged(object sender, EventArgs e)
-        // {
-        //     Debug.Log($"State changed to {Firestorm.AuthInstance.CurrentUser?.UserId} !!");
-        // }
-
-        private async Task EnsureUserCreated(string email, string password)
-        {
-            try
-            {
-                await Firestorm.AuthInstance.CreateUserWithEmailAndPasswordAsync(email, password);
-            }
-            catch (AggregateException e)
-            {
-                if (e.InnerException.GetType() != typeof(FirebaseException) ||
-                 e.InnerException.Message.Contains("The email address is already in use by another account.") == false)
-                {
-                    throw;
-                }
-            }
-        }
-
-        [SetUp]
-        public void CreateTestInstance()
+        [UnitySetUp]
+        public IEnumerator SetUpFirestore()
         {
             if (Application.isPlaying == false)
             {
                 Firestorm.CreateEditModeInstance();
             }
-        }
-
-        [SetUp]
-        public void SignOutBeforeTest()
-        {
             Firestorm.AuthInstance.SignOut();
+            yield return T().YieldWait(); async Task T()
+            {
+                await SetUpFirestoreForTest(isTearDown: false);
+                await SignInSuperUser();
+            }
         }
 
-        [TearDown]
-        public void DisposeTestInstance()
+        [UnityTearDown]
+        public IEnumerator TearDownFirestore()
         {
+            yield return T().YieldWait(); async Task T()
+            {
+                await SetUpFirestoreForTest(isTearDown: true);
+            }
+            //if you dispose before above, it hard crash unity lol
             if (Application.isPlaying == false)
             {
                 Firestorm.DisposeEditModeInstance();

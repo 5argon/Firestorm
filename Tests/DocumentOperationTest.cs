@@ -2,7 +2,6 @@
 using System.Collections;
 using UnityEngine.TestTools;
 using NUnit.Framework;
-using System.Linq;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
@@ -13,28 +12,11 @@ namespace FirestormTest
 
     public class DocumentOperationTest : FirestormTestBase
     {
-
-
-        // [UnityTest]
-        // public IEnumerator CleaningWorks20Times()
-        // {
-        //     yield return T().YieldWait(); async Task T()
-        //     {
-        //         for (int i = 0; i < 20; i++)
-        //         {
-        //             await EnsureCleanTestCollection();
-        //             Debug.Log($"Passed {i}");
-        //         }
-        //     }
-        // }
-
         [UnityTest]
         public IEnumerator GetEmptyDocument()
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 var doc = await TestDocument1.GetSnapshotAsync();
                 Assert.That(doc.IsEmpty);
             }
@@ -45,9 +27,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
-
                 //See what TestDocument1 is in the FirestormTestBase
                 var t1 = TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 1, b = "x" }, SetOption.Overwrite);
                 var t2 = TestDocument2.SetAsync<TestDataAB>(new TestDataAB { a = 2, b = "y" }, SetOption.Overwrite);
@@ -74,9 +53,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
-
                 var t1 = TestDocument2.SetAsync<TestDataAB>(new TestDataAB { a = 1, b = "x" }, SetOption.Overwrite);
                 var t2 = TestDocument21.SetAsync<TestDataAB>(new TestDataAB { a = 2, b = "y" }, SetOption.Overwrite);
                 var t3 = TestDocument22.SetAsync<TestDataAB>(new TestDataAB { a = 3, b = "z" }, SetOption.Overwrite);
@@ -101,8 +77,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 31, b = "hi" }, SetOption.Overwrite);
                 //Check if the data is there on the server
                 var snapshot = await TestDocument1.GetSnapshotAsync();
@@ -118,8 +92,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 31, b = "hi" }, SetOption.Overwrite);
                 await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 55, b = "yo" }, SetOption.Overwrite);
 
@@ -136,8 +108,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await TestDocument1.SetAsync<TestDataABC>(new TestDataABC { a = 31, b = "hi", c = 55.555 }, SetOption.Overwrite);
                 await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 55, b = "yo" }, SetOption.Overwrite);
 
@@ -160,8 +130,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 55, b = "yo" }, SetOption.Overwrite);
                 await TestDocument1.SetAsync<TestDataABC>(new TestDataABC { a = 31, b = "hi", c = 55.555 }, SetOption.Overwrite);
 
@@ -191,8 +159,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 31, b = "hi" }, SetOption.MergeAll);
                 //Check if the data is there on the server
                 var snapshot = await TestDocument1.GetSnapshotAsync();
@@ -208,8 +174,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await TestDocument1.SetAsync<TestDataABC>(new TestDataABC { a = 31, b = "hi", c = 55.555 }, SetOption.MergeAll);
                 await TestDocument1.SetAsync<TestDataABC>(new TestDataABC { a = 66, b = "yo", c = 66.666 }, SetOption.MergeAll);
 
@@ -227,8 +191,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await TestDocument1.SetAsync<TestDataABC>(new TestDataABC { a = 31, b = "hi", c = 55.555 }, SetOption.MergeAll);
                 await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 66, b = "yo" }, SetOption.MergeAll);
 
@@ -246,8 +208,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 31, b = "hi" }, SetOption.MergeAll);
                 await TestDocument1.SetAsync<TestDataABC>(new TestDataABC { a = 66, b = "yo", c = 55.555 }, SetOption.MergeAll);
 
@@ -288,8 +248,6 @@ namespace FirestormTest
                     },
                 };
 
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await TestDocument1.SetAsync(startingData, SetOption.MergeAll);
                 await TestDocument1.SetAsync(newData, SetOption.MergeAll);
                 var snapshot = await TestDocument1.GetSnapshotAsync();
@@ -332,9 +290,7 @@ namespace FirestormTest
                         c = 77.777,
                     },
                 };
-
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
+                
                 await TestDocument1.SetAsync(startingData, SetOption.Overwrite);
                 await TestDocument1.SetAsync(newData, SetOption.Overwrite);
                 var snapshot = await TestDocument1.GetSnapshotAsync();
@@ -356,9 +312,6 @@ namespace FirestormTest
             yield return T().YieldWait(); async Task T()
             {
                 //Test if all value type can go and come back from the server correctly
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
-
                 var ts = new TestStruct();
                 ts.typeTimestamp = DateTime.MinValue;
                 ts.typeString = "CYCLONEMAGNUM";

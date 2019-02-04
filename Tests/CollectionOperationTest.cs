@@ -15,8 +15,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 var querySnapshot = await TestCollection.GetSnapshotAsync();
                 Assert.That(querySnapshot.Documents.Count(), Is.Zero);
                 
@@ -30,9 +28,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
-
                 await TestDocument2.SetAsync<TestDataAB>(new TestDataAB { a = 2, b = "y" }, SetOption.Overwrite);
                 await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 1, b = "x" }, SetOption.Overwrite);
                 await TestDocument3.SetAsync<TestDataAB>(new TestDataAB { a = 3, b = "z" }, SetOption.Overwrite);
@@ -81,8 +76,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await SetupForQuery();
                 var snap = await TestCollection.GetSnapshotAsync(("a", "<=", 999));
                 Assert.That(snap.Documents.Count(), Is.EqualTo(3), "Do not get documents in the subcollection");
@@ -98,7 +91,7 @@ namespace FirestormTest
         //     yield return T().YieldWait(); async Task T()
         //     {
         //         await EnsureCleanTestCollection();
-        //         await SignInSuperUser();
+        //         
         //         await TestCollection.AddAsync(new TestDataABC { a = 3, b = "z", c = 33.333 });
         //         await TestSubcollection.AddAsync(new TestDataABC { a = 2323, b = "z", c = 33.333 });
         //     }
@@ -109,8 +102,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await SetupForQuery();
                 var snap = await TestCollection.GetSnapshotAsync(("a", "<=", 2));
                 var enu = snap.Documents.GetEnumerator();
@@ -133,8 +124,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await SetupForQuery();
                 var snap = await TestCollection.GetSnapshotAsync(("a", "<", 2));
                 var enu = snap.Documents.GetEnumerator();
@@ -153,8 +142,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await SetupForQuery();
                 var snap = await TestCollection.GetSnapshotAsync(("a", ">=", 2));
                 var enu = snap.Documents.GetEnumerator();
@@ -177,8 +164,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await SetupForQuery();
                 var snap = await TestCollection.GetSnapshotAsync(("a", ">", 2));
                 var enu = snap.Documents.GetEnumerator();
@@ -197,8 +182,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await SetupForQuery();
                 var snap = await TestCollection.GetSnapshotAsync(("b", "==", "x"));
                 var enu = snap.Documents.GetEnumerator();
@@ -217,8 +200,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await SetupForQuery();
                 var snap = await TestCollection.GetSnapshotAsync(("b", "==", "5argon"));
                 Assert.That(snap.Documents.Count(), Is.EqualTo(0));
@@ -236,9 +217,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
-
                 var t1 = TestDocument1.SetAsync<PlayerWithFriends>(new PlayerWithFriends
                 { playerName = "5argon", friends = new object[] { "Suna", "Sompong" }.ToList() }, SetOption.Overwrite);
                 var t2 = TestDocument2.SetAsync<PlayerWithFriends>(new PlayerWithFriends
@@ -265,8 +243,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await SetupForQuery();
 
                 var snap = await TestCollection.GetSnapshotAsync(("b", "==", "x"), ("a", "==", 1));
@@ -289,8 +265,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await SetupForQuery();
 
                 var snap = await TestCollection.GetSnapshotAsync(("a", ">=", 1));
@@ -319,8 +293,6 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await SetupForQuery();
 
                 var snap = await TestCollection.GetSnapshotAsync(("b", "==", "x"), ("a", ">", 4));
@@ -334,15 +306,10 @@ namespace FirestormTest
         {
             yield return T().YieldWaitExpectException<FirestormPleaseCreateCompositeIndexException>(); async Task T()
             {
-                await EnsureCleanTestCollection();
-                await SignInSuperUser();
                 await SetupForQuery();
                 var snap = await TestCollection.GetSnapshotAsync(("c", "<", 55.555), ("a", "==", 2));
                 //It should print the error with creation link here
             }
         }
-
-
-
     }
 }

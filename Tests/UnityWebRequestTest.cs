@@ -1,34 +1,17 @@
 ﻿using System.Threading.Tasks;
 using System.Collections;
 using UnityEngine.TestTools;
-using UnityEngine;
 using NUnit.Framework;
 using UnityEngine.Networking;
-using Firebase.Auth;
 using System.Reflection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Text;
-using System.IO;
 using E7.Firebase;
+using System.Linq;
 
 namespace FirestormTest
 {
-    public class UnityWebRequestTest : FirestormTestBase
+    public class UnityWebRequestTest : FirestormTestDataStructure
     {
-        [UnityTest]
-        public IEnumerator UseTokenFromAuthUnitySdkForRest()
-        {
-            yield return T().YieldWait(); async Task T()
-            {
-                await EnsureSuperUserAccountCreated();
-                await SignInSuperUser();
-                var uwr = await (Task<UnityWebRequest>)typeof(FirestormConfig).GetMethod("UWRGet", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(FirestormConfig.Instance, new object[] { "/my-collection" });
-                //Debug.Log($"{uwr.downloadHandler.text}");
-                //File.WriteAllText($"{Application.dataPath}/hi.txt", $"{uwr.downloadHandler.text}");
-                Assert.That(uwr.isHttpError, Is.Not.True, uwr.error);
-            }
-        }
+
 
         [UnityTest]
         public IEnumerator DiscoveryService()

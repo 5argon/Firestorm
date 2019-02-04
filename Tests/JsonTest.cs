@@ -3,7 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using E7.Firebase;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using UnityEngine;
 using E7.Firebase.LitJson;
@@ -13,7 +12,7 @@ using Yo = System.Collections.Generic.Dictionary<string, object>;
 
 namespace FirestormTest
 {
-    public class JsonTest : FirestormTestBase
+    public class JsonTest : FirestormTestDataStructure
     {
         [Test]
         public void LitJsonHandlesSupportedType()
