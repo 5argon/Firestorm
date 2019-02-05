@@ -38,7 +38,7 @@ namespace E7.Firebase
             }
         }
 
-        public T ConvertTo<T>() where T : class, new()
+        public T ConvertTo<T>() where T : class
         {
             if (IsEmpty)
             {
@@ -47,13 +47,6 @@ namespace E7.Firebase
 
             //Leave it to LitJSON, we have formatted the json to be ready for convert.
             return JsonMapper.ToObject<T>(formattedDataJson);
-
-            // var serializer = JsonSerializer.Create(new JsonSerializerSettings
-            // {
-            //     Converters = new JsonConverter[] { new DocumentConverter<T>(name) },
-            // }
-            // );
-            //return JsonMapper.ToObject<T>(
         }
 
         /// <summary>

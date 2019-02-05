@@ -104,6 +104,7 @@ namespace FirestormTest
             ts.typeNumber = 55.55;
             ts.typeNumberInt = 555;
             ts.typeBoolean = false;
+            ts.typeEnum = TestEnum.B;
 
             var minPlus2 = DateTime.MinValue + TimeSpan.FromHours(2);
             ts.typeMap = new TestStructInner
@@ -148,6 +149,8 @@ namespace FirestormTest
             Assert.That(getBack.typeNumber, Is.EqualTo(55.55));
             Assert.That(getBack.typeNumberInt, Is.EqualTo(555));
             Assert.That(getBack.typeBoolean, Is.EqualTo(false));
+            Assert.That(getBack.typeEnum, Is.EqualTo(TestEnum.B));
+
             Assert.That((string)getBack.typeArray[0], Is.EqualTo("5argonTheGod"));
             Assert.That(getBack.typeArray[1], Is.EqualTo(6789));
             Debug.Log($"{(string)getBack.typeArray[2]}");

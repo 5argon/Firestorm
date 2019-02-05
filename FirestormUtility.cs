@@ -16,6 +16,9 @@ namespace E7.Firebase
                     return ("timestampValue", dt.ToString("o"));
                 case int i:
                     return ("integerValue", i.ToString());
+                case Enum en:
+                    //Enum is also encoded as "integer string"
+                    return ("integerValue", Convert.ToInt32(en).ToString());
                 case double dbl:
                     return ("doubleValue", dbl);
                 case string st:

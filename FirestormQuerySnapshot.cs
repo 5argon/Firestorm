@@ -10,6 +10,7 @@ namespace E7.Firebase
     {
         private List<FirestormDocumentSnapshot> documents;
         public IEnumerable<FirestormDocumentSnapshot> Documents => documents;
+        public int Count => documents.Count;
 
         public FirestormQuerySnapshot(string collectionJson)
         {
