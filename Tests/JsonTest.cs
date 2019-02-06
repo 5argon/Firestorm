@@ -157,7 +157,6 @@ namespace FirestormTest
 
             Assert.That((string)getBack.typeArray[0], Is.EqualTo("5argonTheGod"));
             Assert.That(getBack.typeArray[1], Is.EqualTo(6789));
-            Debug.Log($"{(string)getBack.typeArray[2]}");
             var timeInArray = DateTime.Parse((string)getBack.typeArray[2]).ToUniversalTime();
 
             Assert.That(timeInArray.Year, Is.EqualTo(dt.Year));

@@ -22,13 +22,7 @@ namespace E7.Firebase
         public string Name => document.name;
         public FirestormDocument Document => document;
 
-        // public string name;
-        // public DateTime createTime;
-        // public DateTime updateTime;
-        // public JToken fields;
-        //public IEnumerable<JProperty> properties;
         public bool IsEmpty { private set; get; }
-
 
         public static FirestormDocumentSnapshot Empty
         {
@@ -85,7 +79,7 @@ namespace E7.Firebase
 
             this.document = JsonMapper.ToObject<FirestormDocument>(jsonString);
 
-            //Write in a format that can be map to any object by LitJSON
+            //Write in a format that can be map to any object by (a modified) LitJSON
             var writer = new JsonWriter();
             writer.PrettyPrint = true;
             writer.WriteObjectStart();
@@ -98,12 +92,12 @@ namespace E7.Firebase
             }
             writer.WriteObjectEnd();
 
-            formattedDataJson =  writer.ToString();
+            formattedDataJson = writer.ToString();
             //Debug.Log($"{formattedDataJson}");
 
             void ValueTextToWrite(string valueText, object value)
             {
-                if(value is JsonData jd)
+                if (value is JsonData jd)
                 {
                     value = (JsonData)jd;
                 }
@@ -126,7 +120,7 @@ namespace E7.Firebase
                     case "arrayValue":
                         writer.WriteArrayStart();
                         JsonData al = (JsonData)((Dictionary<string, object>)value)["values"];
-                        foreach(JsonData a in al)
+                        foreach (JsonData a in al)
                         {
                             //If you put array in array it may explode here
                             ValueTextToWrite(a.Keys.First(), a[a.Keys.First()].UnderlyingPrimitive());
@@ -155,32 +149,8 @@ namespace E7.Firebase
                         break;
                 }
             }
-
-            //var jo = JObject.Parse(jsonString);
-
-            // if (jo.ContainsKey(nameof(name)) &&
-            //     jo.ContainsKey(nameof(fields)))
-            // {
-            //     name = (string)jo[nameof(name)];
-            //     fields = jo[nameof(fields)];
-            //     properties = fields.Children<JProperty>();
-            //     if (jo.ContainsKey(nameof(createTime)) &&
-            //         jo.ContainsKey(nameof(updateTime)))
-            //     {
-            //         createTime = jo[nameof(createTime)].ToObject<DateTime>();
-            //         updateTime = jo[nameof(updateTime)].ToObject<DateTime>();
-            //     }
-            //     else
-            //     {
-            //         createTime = default;
-            //         updateTime = default;
-            //     }
-            // }
-            // else
-            // {
-            //     throw new FirestormException($"This object is not a document! {jsonString}");
-            // }
         }
+
 
         public override string ToString() => $"{document.name} : {document.createTime} {document.updateTime} Fields {document.fields.ToString()}";
     }

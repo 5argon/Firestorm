@@ -42,114 +42,93 @@ namespace E7.Firebase
             string documentJsonToSet = FirestormUtility.ToJsonDocument(documentDataToSet, "");
             //File.WriteAllText(Application.dataPath + "/snap.txt", documentJsonToSet);
 
-            if (documentServerSnapshot.IsEmpty)
+            //If there is a data.. we try to build the correct DocumentMask.
+            var docSnap = new FirestormDocumentSnapshot(documentJsonToSet);
+            string fieldMaskLocal = docSnap.FieldsDocumentMaskJson();
+
+            var localF = JsonMapper.ToObject<DocumentMask>(fieldMaskLocal);
+            var mergedFields = new HashSet<string>();
+
+            if (setOption == SetOption.MergeAll)
             {
-                //Create a document 
-
-                //Debug.Log($"Name {documentName} DOCJ {documentJson}");
-
-                byte[] postData = Encoding.UTF8.GetBytes(documentJsonToSet);
-
-                //The URL must NOT include document name
-                var uwr = await FirestormConfig.Instance.UWRPost(parent, new (string, string)[]
+                //Getting fields of only local. The server will touch only field presents in the mask = merging.
+                foreach (var f in localF.fieldPaths)
                 {
-                ("documentId",documentName)
-                }, postData);
-
-                //It returns the same document but with the generated document ID in the case that createDocument request does not specify a name
-                //We specify a name so there is no point to return any data.
-
-                //return new FirestormDocumentSnapshot(uwr.downloadHandler.text).ConvertTo<T>();
-            }
-            else
-            {
-                //If there is a data.. we try to build the correct DocumentMask.
-                var docSnap = new FirestormDocumentSnapshot(documentJsonToSet);
-                string fieldMaskLocal = docSnap.FieldsDocumentMaskJson();
-
-                var localF = JsonMapper.ToObject<DocumentMask>(fieldMaskLocal);
-                var mergedFields = new HashSet<string>();
-
-                if (setOption == SetOption.MergeAll)
-                {
-                    //Getting fields of only local. The server will touch only field presents in the mask = merging.
-                    foreach (var f in localF.fieldPaths)
-                    {
-                        mergedFields.Add(f);
-                    }
+                    mergedFields.Add(f);
                 }
-                else if (setOption == SetOption.Overwrite)
+            }
+            else if (setOption == SetOption.Overwrite)
+            {
+                //Getting fields of existing data.
+                //Patch a document, using fields from remote combined with local.
+                // Including all local fields ensure update
+                // Including remote fields that does not intersect with local = delete on the server
+                if (documentServerSnapshot.IsEmpty == false)
                 {
-                    //Getting fields of existing data.
-                    //Patch a document, using fields from remote combined with local.
-                    // Including all local fields ensure update
-                    // Including remote fields that does not intersect with local = delete on the server
                     string fieldMaskRemote = documentServerSnapshot.FieldsDocumentMaskJson();
                     var remoteF = JsonMapper.ToObject<DocumentMask>(fieldMaskRemote);
                     foreach (var f in remoteF.fieldPaths)
                     {
                         mergedFields.Add(f);
                     }
-                    foreach (var f in localF.fieldPaths)
-                    {
-                        mergedFields.Add(f);
-                    }
                 }
-                else
+
+                foreach (var f in localF.fieldPaths)
                 {
-                    throw new NotImplementedException($"Set option {setOption} not implemented");
+                    mergedFields.Add(f);
                 }
-                // var mergedMasks = new DocumentMask { fieldPaths = mergedFields.ToArray() };
-                // var mergedMasksJson = JsonConvert.SerializeObject(mergedMasks);
-                // var jo = JObject.Parse(mergedMasksJson);
-
-                //Debug.Log($"Mask {mergedMasksJson} DOCJ {documentJson}");
-                //Debug.Log($"DOCJ {documentJson}");
-
-                //New document data, but use the path of the existing document that came from server.
-                var doc = new FirestormDocumentForCommit(documentServerSnapshot.Document.name, docSnap.Document);
-
-                var writeUpdate = new WriteUpdate
-                {
-                    updateMask = new DocumentMask { fieldPaths = mergedFields.ToArray() },
-                    update = doc,
-                };
-
-                var commit = new CommitUpdate
-                {
-                    writes = new WriteUpdate[] { writeUpdate },
-                };
-
-                //byte[] postData = Encoding.UTF8.GetBytes(documentJson);
-                
-                // NOTE : I probably shoot myself somewhere while modifying LitJSON, now with nested map field it fails the validation.
-                // (probably the object-as-dictionary<string,object> hack cause the lib to miscount object nesting level)
-                // But turning off the validation turns out to produce a valid JSON and works with Firestore.. so...
-
-                JsonWriter writer =  new JsonWriter();
-                writer.Validate = false;
-                JsonMapper.ToJson(commit, writer);
-                var jsonPostData = writer.ToString();
-
-                byte[] postData = Encoding.UTF8.GetBytes(jsonPostData);
-                Debug.Log($"JPOST {jsonPostData}");
-
-                //var updateMaskForUrl = mergedFields.Select(x => ("updateMask.fieldPaths", x)).ToArray();
-
-                //lol Android does not support custom verb for UnityWebRequest so we could not use "PATCH"
-                //(https://docs.unity3d.com/Manual/UnityWebRequest.html)
-                //"custom verbs are permitted on all platforms except for Android"
-                //(https://stackoverflow.com/questions/19797842/patch-request-android-volley)
-                //(https://answers.unity.com/questions/1230067/trying-to-use-patch-on-a-unitywebrequest-on-androi.html)
-
-                //var uwr = await FirestormConfig.Instance.UWRPatch(stringBuilder.ToString(), updateMaskForUrl, postData);
-
-                //This is now based on POST not PATCH, should work on Android
-                var uwr = await FirestormConfig.Instance.UWRPost(":commit", null, postData);
-
-                //The request returns the same document. But we discard it.
-                //return new FirestormDocumentSnapshot(uwr.downloadHandler.text).ConvertTo<T>();
             }
+            else
+            {
+                throw new NotImplementedException($"Set option {setOption} not implemented");
+            }
+
+            //Build a path for commit. Works both if it is a new document or existing document because we are using `commit` API and not `createDocument` / `patch`.
+            var doc = new FirestormDocumentForCommit($"{FirestormConfig.Instance.DocumentPathFromProjects}{stringBuilder.ToString()}", docSnap.Document);
+
+            var writeUpdate = new WriteUpdate
+            {
+                updateMask = new DocumentMask { fieldPaths = mergedFields.ToArray() },
+                update = doc,
+            };
+
+            //Add a server time sentinel value support
+            var writeServerTime = new WriteServerTime
+            {
+            };
+
+            var commit = new CommitUpdate
+            {
+                writes = new WriteUpdate[] { writeUpdate },
+            };
+
+            //byte[] postData = Encoding.UTF8.GetBytes(documentJson);
+
+            // NOTE : I probably shoot myself somewhere while modifying LitJSON, now with nested map field it fails the validation.
+            // (probably the object-as-dictionary<string,object> hack cause the lib to miscount object nesting level)
+            // But turning off the validation turns out to produce a valid JSON and works with Firestore.. so...
+
+            JsonWriter writer = new JsonWriter();
+            writer.Validate = false;
+            JsonMapper.ToJson(commit, writer);
+            var jsonPostData = writer.ToString();
+
+            byte[] postData = Encoding.UTF8.GetBytes(jsonPostData);
+            Debug.Log($"JPOST {jsonPostData}");
+
+            //lol Android does not support custom verb for UnityWebRequest so we could not use "PATCH"
+            //(https://docs.unity3d.com/Manual/UnityWebRequest.html)
+            //"custom verbs are permitted on all platforms except for Android"
+            //(https://stackoverflow.com/questions/19797842/patch-request-android-volley)
+            //(https://answers.unity.com/questions/1230067/trying-to-use-patch-on-a-unitywebrequest-on-androi.html)
+
+            //var uwr = await FirestormConfig.Instance.UWRPatch(stringBuilder.ToString(), updateMaskForUrl, postData);
+
+            //This is now based on POST not PATCH, should work on Android. Also works for both new document and updating old document. Nice!
+            var uwr = await FirestormConfig.Instance.UWRPost(":commit", null, postData);
+
+            //The request returns the same document. But we discard it.
+            //return new FirestormDocumentSnapshot(uwr.downloadHandler.text).ConvertTo<T>();
         }
 
         //Super messy class chain to build JSON.. but it works is all that matters in this makeshift API
