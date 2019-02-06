@@ -32,22 +32,23 @@ namespace E7.Firebase
         /// 
         /// There is no AddAsync (to make a new document in a collection without naming it) implemented like in the real C# API.
         /// </summary>
-        public async Task SetAsync<T>(T documentData, SetOption setOption) where T : class, new()
+        public async Task SetAsync<T>(T documentDataToSet, SetOption setOption) where T : class
         {
             //Check if a document is there or not
-            var snapshot = await GetSnapshotAsync();
+            var documentServerSnapshot = await GetSnapshotAsync();
 
             //Document "name" must not be set when creating a new one. The name should be in query parameter "documentId"
             //When updating the name must also be blank. It uses the name from REST URL already.
-            string documentJson = FirestormUtility.ToJsonDocument(documentData, "");
-            //File.WriteAllText(Application.dataPath + "/snap.txt", documentJson);
-            if (snapshot.IsEmpty)
+            string documentJsonToSet = FirestormUtility.ToJsonDocument(documentDataToSet, "");
+            //File.WriteAllText(Application.dataPath + "/snap.txt", documentJsonToSet);
+
+            if (documentServerSnapshot.IsEmpty)
             {
                 //Create a document 
 
                 //Debug.Log($"Name {documentName} DOCJ {documentJson}");
 
-                byte[] postData = Encoding.UTF8.GetBytes(documentJson);
+                byte[] postData = Encoding.UTF8.GetBytes(documentJsonToSet);
 
                 //The URL must NOT include document name
                 var uwr = await FirestormConfig.Instance.UWRPost(parent, new (string, string)[]
@@ -63,8 +64,9 @@ namespace E7.Firebase
             else
             {
                 //If there is a data.. we try to build the correct DocumentMask.
+                var docSnap = new FirestormDocumentSnapshot(documentJsonToSet);
+                string fieldMaskLocal = docSnap.FieldsDocumentMaskJson();
 
-                string fieldMaskLocal = new FirestormDocumentSnapshot(documentJson).FieldsDocumentMaskJson();
                 var localF = JsonMapper.ToObject<DocumentMask>(fieldMaskLocal);
                 var mergedFields = new HashSet<string>();
 
@@ -82,7 +84,7 @@ namespace E7.Firebase
                     //Patch a document, using fields from remote combined with local.
                     // Including all local fields ensure update
                     // Including remote fields that does not intersect with local = delete on the server
-                    string fieldMaskRemote = snapshot.FieldsDocumentMaskJson();
+                    string fieldMaskRemote = documentServerSnapshot.FieldsDocumentMaskJson();
                     var remoteF = JsonMapper.ToObject<DocumentMask>(fieldMaskRemote);
                     foreach (var f in remoteF.fieldPaths)
                     {
@@ -102,11 +104,37 @@ namespace E7.Firebase
                 // var jo = JObject.Parse(mergedMasksJson);
 
                 //Debug.Log($"Mask {mergedMasksJson} DOCJ {documentJson}");
-                Debug.Log($"DOCJ {documentJson}");
+                //Debug.Log($"DOCJ {documentJson}");
 
-                byte[] postData = Encoding.UTF8.GetBytes(documentJson);
+                //New document data, but use the path of the existing document that came from server.
+                var doc = new FirestormDocumentForCommit(documentServerSnapshot.Document.name, docSnap.Document);
 
-                var updateMaskForUrl = mergedFields.Select(x => ("updateMask.fieldPaths", x)).ToArray();
+                var writeUpdate = new WriteUpdate
+                {
+                    updateMask = new DocumentMask { fieldPaths = mergedFields.ToArray() },
+                    update = doc,
+                };
+
+                var commit = new CommitUpdate
+                {
+                    writes = new WriteUpdate[] { writeUpdate },
+                };
+
+                //byte[] postData = Encoding.UTF8.GetBytes(documentJson);
+                
+                // NOTE : I probably shoot myself somewhere while modifying LitJSON, now with nested map field it fails the validation.
+                // (probably the object-as-dictionary<string,object> hack cause the lib to miscount object nesting level)
+                // But turning off the validation turns out to produce a valid JSON and works with Firestore.. so...
+
+                JsonWriter writer =  new JsonWriter();
+                writer.Validate = false;
+                JsonMapper.ToJson(commit, writer);
+                var jsonPostData = writer.ToString();
+
+                byte[] postData = Encoding.UTF8.GetBytes(jsonPostData);
+                Debug.Log($"JPOST {jsonPostData}");
+
+                //var updateMaskForUrl = mergedFields.Select(x => ("updateMask.fieldPaths", x)).ToArray();
 
                 //lol Android does not support custom verb for UnityWebRequest so we could not use "PATCH"
                 //(https://docs.unity3d.com/Manual/UnityWebRequest.html)
@@ -114,12 +142,54 @@ namespace E7.Firebase
                 //(https://stackoverflow.com/questions/19797842/patch-request-android-volley)
                 //(https://answers.unity.com/questions/1230067/trying-to-use-patch-on-a-unitywebrequest-on-androi.html)
 
-                //TODO : Try using POST with X-HTTP-Method-Override: PATCH and see if Firebase's server supports overriding or not?
-                var uwr = await FirestormConfig.Instance.UWRPatch(stringBuilder.ToString(), updateMaskForUrl, postData);
+                //var uwr = await FirestormConfig.Instance.UWRPatch(stringBuilder.ToString(), updateMaskForUrl, postData);
 
-                //The patch request returns the same document.
+                //This is now based on POST not PATCH, should work on Android
+                var uwr = await FirestormConfig.Instance.UWRPost(":commit", null, postData);
+
+                //The request returns the same document. But we discard it.
                 //return new FirestormDocumentSnapshot(uwr.downloadHandler.text).ConvertTo<T>();
             }
+        }
+
+        //Super messy class chain to build JSON.. but it works is all that matters in this makeshift API
+
+        private class CommitUpdate
+        {
+            public IWrite[] writes;
+        }
+
+        private interface IWrite
+        {
+        }
+
+        private class WriteUpdate : IWrite
+        {
+            public DocumentMask updateMask;
+            public FirestormDocumentForCommit update;
+        }
+
+        private class WriteServerTime  : IWrite
+        {
+            public DocumentTransform transform;
+        }
+
+        private class DocumentTransform
+        {
+            public string document;
+            public FieldTransform[] fieldTransforms;
+        }
+
+        private class FieldTransform
+        {
+            public string fieldPath;
+            public ServerValue setToServerValue = ServerValue.REQUEST_TIME;
+        }
+
+        private enum ServerValue 
+        {
+            SERVER_VALUE_UNSPECIFIED,
+            REQUEST_TIME
         }
 
         /// <summary>
@@ -133,7 +203,7 @@ namespace E7.Firebase
 
         public async Task<FirestormDocumentSnapshot> GetSnapshotAsync()
         {
-            Debug.Log($"do {stringBuilder.ToString()}");
+            //Debug.Log($"do {stringBuilder.ToString()}");
             try
             {
                 var uwr = await FirestormConfig.Instance.UWRGet(stringBuilder.ToString());

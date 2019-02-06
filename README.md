@@ -8,9 +8,13 @@ Makeshift Cloud Firestore C# API that works with Unity via REST API. Contains on
 
 - Editor : All tests passed. If you only care about development with CFS and not the deploy version, you can use this now for the time being.
 - iOS : I don't have 64-bit devices with me. The latest version of Unity has a hard crash bug when built to 32-bit device.
-- Android : It should not be able to use PATCH header from `UnityWebRequest`. I am planning to send POST to a custom script in Cloud Function for it to do PATCH request instead. The official Unity SDK would not have this problem since it should relies on gRPC + Protobuf message instead of REST.
+- Android : The weakness is it is not be able to use PATCH header from `UnityWebRequest`. I have since changed PATCH (`patch` REST API) to POST (`commit` REST API) but not tested yet.
 - There are tons of unprofessional `Debug.Log` left in the code currently, planned to remove once I can get everything work on iOS and Android.
 - Right now I am focusing on editor-only work that wrap over Firestorm, so not going to make it work on the real device for now since Firestorm is fully usable in editor right now. I am guessing in March the official Unity SDK would come out and if that is the case then I won't lose as much time reinventing the wheel.
+
+## This is far from identical with the real C# API
+
+For usage of the real thing please see : https://jskeet.github.io/google-cloud-dotnet/docs/Google.Cloud.Firestore.Data/datamodel.html and you know how much you have to migrate after that thing came out.
 
 ## Why Cloud Firestore
 
@@ -40,14 +44,17 @@ I put the requirement as an "assembly override" in the asmdef explicitly. It req
 - `Firebase.Auth.dll`
 - `Unity.Tasks.dll`
 
+For the test assembly, it requires Cloud Function also. I opt to hide Admin SDK on the server and let the cloud function handle test resets.
+
 LitJSON is baked in the package. It is literally "little" that I could embed it in with my modifications. (60KB)
 
 ## Receiving data with LitJSON
 
 After you got the document snapshot, `snapshot.ConvertTo<T>` will change JSON into your C# data container. How that works is according to LitJSON and may not be the same as the real upcoming SDK. Things to watch out : 
 
+- To receive `blob` use `byte[]`.
 - To receive CFS array you use `List<object>`. However, since all in this list are object LitJSON don't know which type it should convert to and boxed by `object`. For example if you have an array containing integer, double, timestamp, you will get integer as string and timestamp as string as that was what Google is sending from the server. Double is a number. Boolean is correctly a boolean. For plain fields, receiving into `DateTime` will get you `DateTime` correctly as expected as LitJson can see the type and parse the string accordingly.
-- Look at LitJson test to see what can receive what : https://github.com/LitJSON/litjson/blob/develop/test/JsonMapperTest.cs
+- Look at LitJson test to see what else can receive what : https://github.com/LitJSON/litjson/blob/develop/test/JsonMapperTest.cs
 
 ## Why not Unity's JsonUtility
 
@@ -71,11 +78,11 @@ And if you look at the [source](https://github.com/JamesNK/Newtonsoft.Json/blob/
 
 I made this just enough to adopt Firestore as soon as possible. Features are at bare minimum. Code is a mess and also performance is really BAD. (Sent JSON are even indented just so that debugging would be easy..)
 
-- Type excluded in a Document : Map inside a map (Map = dictionary of JSON not map as in world map), Geopoint (LatLng), bytes (use base-64 string instead). Map for 1 level in a document is fine.
+- Type excluded in a Document : Map inside a map (Map = dictionary of JSON not map as in world map), Geopoint (LatLng), Map for 1 level in a document is fine.
 - Any mentioned types that is in an array. Basically, recursive programming is hard and I don't want to mess with it + my game does not have nested map design. But hey! Array is implemented! A friend list per player for example can be strings in an array.
-- On getting component you must provide a concrete **type generic** with all fields known except `List<object>` which is used to receive Firestore array. It **must** be a `class` (because it would be easy to do reflection to populate its value). It will be reflected by field name of the document to match with what's in your type. The remaining fields are left at default. You cannot substitute any fields with, for example, `Dictionary<string, string>`.
+- Receiving type must be a `class` with all public fields name matching names from Firestore. (It can't even be a property, see the unity test.) On getting component you must provide a concrete **type generic** with all fields known except `List<object>` which is used to receive Firestore array. It must be a `class` because it would be easy to do reflection to populate its value. It will be reflected by field name of the document to match with what's in your type. The remaining fields are left at default. You cannot substitute any fields with, for example, `Dictionary<string, string>`.
 - Transaction not supported. (Used for atomic operation that rolls back together when one thing fails)
-- Manual rollback not supported. (There is actually a REST endpoint for this)
+- Manual rollback not supported. (There is actually a REST endpoint for this, but too difficult to bother)
 - Batched write not supported.
 - Ordering not supported.
 - Limiting not supported.
@@ -84,7 +91,7 @@ I made this just enough to adopt Firestore as soon as possible. Features are at 
 - Offline data not supported.
 - Managing index not supported. (It is a long-running operation, not easy to poll for status)
 - Import/export data not supported.
-- No admin API supported. (Use a work around by creating a "super user" with all allowed permission for the Firestore instead of a real service account)
+- No admin API supported. (Use a work around by asking Cloud Functions to do admin things including test clean up/tear down)
 - Ordering of a query is locked to **ascending**. When creating a composite index please use only ascending index.
 - `AddAsync` on the collection does not return the newly created document's reference but just the generated document ID.
 - Exception throwing is probably not so good. But I tried to bubble up the error from Google's message from JSON REST response download handler as much as possible. (You will at least see HTTP error code)
@@ -104,9 +111,70 @@ You will want to be able to pass all tests as database is a sensitive thing and 
 The test will run against your **real** Firebase account and **cost real money** as it writes and cleans up the Firestore on every test (but probably not much). There are things that is required to setup beforehand.
 
 - Do all the things that is required to make `FirebaseAuth` works in Unity. Install Unity SDK. Add `google-services.json`, `GoogleService-Info.plist` to project, etc.
-- In the right click create asset menu create an asset of `FirestormConfig` and put it in `Resources` folder.
-- Create a super user account in the Auth control panel.
+- In the right click create asset menu create an asset of `FirestormConfig` and put it in `Resources` folder. Fill the form of super user information, this will be sent to Cloud Function for it to use Admin SDK to generate and destroy a test user.
 - Go to your Firestore rules and add all-allowed rule for super user email like this : `allow read, write: if request.auth.token.email == "super@gmail.com";`
+- Deploy a required cloud function named exactly this : `firestormTestCleanUp`. Here is the content. 
+
+```typescript
+
+function testSecretCheck(testSecret: string) {
+    if (testSecret !== "notasecret") {
+        throw new HttpsError("internal", `Your test secret ${testSecret} is incorrect.`);
+    }
+}
+
+/**
+ * Used for unit testing. Delete and recreate user on every test.
+ * @param doNotCreateUser This is true on [TearDown] in C# so that it just delete the user and not create back. After a test there should not be any test user left.
+ */
+async function ensureFreshUser(email: string, password: string, doNotCreateUser: boolean) {
+    try {
+        const superUser: admin.auth.UserRecord = await admin.auth().getUserByEmail(email)
+        //If the user exist delete him.
+        await admin.auth().deleteUser(superUser.uid)
+    }
+    catch (e) {
+        if (e.code !== "auth/user-not-found") {
+            throw e
+        }
+        //Does not exist, it is fine.
+    }
+    if (doNotCreateUser === false) {
+        await admin.auth().createUser({ email: email, password: password })
+    }
+}
+
+export const firestormTestCleanUp = functions.https.onCall(async (data, context) => {
+
+    const testCollectionName: string = "firestorm-test-collection"
+
+    const testDataName1: string = "firestorm-test-data-1"
+    const testDataName2: string = "firestorm-test-data-2"
+    const testDataName3: string = "firestorm-test-data-3"
+
+    const testSubCollectionName: string = "firestorm-test-sub-collection"
+    const testDataName21: string = "firestorm-test-data-21"
+    const testDataName22: string = "firestorm-test-data-22"
+
+    try {
+        testSecretCheck(data.testSecret)
+        await Promise.all([
+            ensureFreshUser(data.superUserId, data.superUserPassword, data.isTearDown),
+            //No need to demolish everything, the test uses just these 5 documents.
+            admin.firestore().collection(testCollectionName).doc(testDataName1).delete(),
+            admin.firestore().collection(testCollectionName).doc(testDataName2).delete(),
+            admin.firestore().collection(testCollectionName).doc(testDataName3).delete(),
+            admin.firestore().collection(testCollectionName).doc(testDataName2).collection(testSubCollectionName).doc(testDataName21).delete(),
+            admin.firestore().collection(testCollectionName).doc(testDataName2).collection(testSubCollectionName).doc(testDataName22).delete(),
+        ])
+    } catch (error) {
+        throw new HttpsError("internal", `${error.code} -> ${error}`)
+    }
+});
+```
+
+Notice `testSecretCheck` method, you can change the password to match what's in your `FirestormConfig`. Every time you run each test this cloud function will run 2 times at set up and at tear down. (Costing you small amount of money)
+
 - Put required data in the `FirestormConfig` file including super user details. This will allow us to run test without relying on including Firebase Admin API.
 - Since index takes several minutes to create I cannot put it in the test without inconvenience. Go create a composite index on collection ID `firestorm-test-collection` with field `a` and `b` as both Ascending. Wait until it finishes.
 - Connect to the internet and you should be able to pass all **Edit Mode** test.
@@ -124,7 +192,6 @@ But in this build there are caveats :
 - You will get `DEVELOPMENT_BUILD` compilation flag. If your game somehow does not build on this button click but builds on normal method, check if your code has something against this precompiler flag or not.
 - Your Package name/Bundle ID will change to a fixed name : **com.UnityTestRunner.UnityTestRunner**. This will cause problem for `google-services.json` and `GoogleService-Info.plist` file as it looks to match the name and now your Firebase Unity SDK cannot initialize the Auth. (Apparently the Android ones can hold multiple package name but not iOS ones)
 - To fix, please create a new set of Android/iOS app with exactly that test name in the same Firebase App (Press "Add app" button). Then download that new set of `google-services.json` and `GoogleService-Info.plist` and rename the old ones to something else because it search the whole project and pick them up by name. After the test remember to rename switch to the real one.
-- Anyways, currently real device test is failing for reasons I stated earlier.
 
 ## "Oh no REST sucks, why don't you use gRPC?"
 

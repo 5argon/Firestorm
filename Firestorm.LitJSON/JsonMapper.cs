@@ -716,6 +716,12 @@ namespace E7.Firebase.LitJson
                               typeof (DateTime), importer);
 
             importer = delegate (object input) {
+                return Convert.FromBase64String((string)input);
+            };
+            RegisterImporter (base_importers_table, typeof (string),
+                              typeof (byte[]), importer);
+
+            importer = delegate (object input) {
                 return DateTimeOffset.Parse((string)input, datetime_format).ToUniversalTime();
             };
             RegisterImporter(base_importers_table, typeof(string),
@@ -748,6 +754,7 @@ namespace E7.Firebase.LitJson
             }
 
             if (obj is IJsonWrapper) {
+                UnityEngine.Debug.Log($"JD {obj.GetType().Name}");
                 if (writer_is_private)
                     writer.TextWriter.Write (((IJsonWrapper) obj).ToJson ());
                 else
@@ -801,11 +808,13 @@ namespace E7.Firebase.LitJson
                 return;
             }
 
-            if (obj is IDictionary) {
-                writer.WriteObjectStart ();
-                foreach (DictionaryEntry entry in (IDictionary) obj) {
-                    writer.WritePropertyName ((string) entry.Key);
-                    WriteValue (entry.Value, writer, writer_is_private,
+            if (obj is IDictionary)
+            {
+                writer.WriteObjectStart();
+                foreach (DictionaryEntry entry in (IDictionary)obj)
+                {
+                    writer.WritePropertyName((string)entry.Key);
+                    WriteValue(entry.Value, writer, writer_is_private,
                                 depth + 1);
                 }
                 writer.WriteObjectEnd ();

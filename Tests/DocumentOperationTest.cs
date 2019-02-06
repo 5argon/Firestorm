@@ -323,6 +323,28 @@ namespace FirestormTest
         }
 
         [UnityTest]
+        public IEnumerator ServerTimestampTest()
+        {
+            yield return T().YieldWait(); async Task T()
+            {
+                var st = new ServerTimestamper
+                {
+                    needServerTime = DateTime.MinValue,
+                    myOwnTime = DateTime.MinValue,
+                };
+                await TestDocument1.SetAsync<ServerTimestamper>(st, SetOption.Overwrite);
+                var getBack = (await TestDocument1.GetSnapshotAsync()).ConvertTo<ServerTimestamper>();
+                Debug.Log($"Get back {getBack.myOwnTime} / {getBack.needServerTime}");
+            }
+        }
+
+        public class ServerTimestamper
+        {
+            [ServerTimestamp] public DateTime needServerTime;
+            public DateTime myOwnTime;
+        }
+
+        [UnityTest]
         public IEnumerator AllSupportedTypesSurvivalTest()
         {
             yield return T().YieldWait(); async Task T()
@@ -335,6 +357,7 @@ namespace FirestormTest
                 ts.typeNumberInt = 555;
                 ts.typeBoolean = false;
                 ts.typeEnum = TestEnum.B;
+                ts.typeBytes = new byte[] { 0x41, 0x42, 0x43 };
 
                 var minPlus2 = DateTime.MinValue + TimeSpan.FromHours(2);
                 ts.typeMap = new TestStructInner
@@ -375,10 +398,10 @@ namespace FirestormTest
                 Assert.That(getBack.typeNumberInt, Is.EqualTo(555));
                 Assert.That(getBack.typeBoolean, Is.EqualTo(false));
                 Assert.That(getBack.typeEnum, Is.EqualTo(TestEnum.B));
+                Assert.That(getBack.typeBytes, Is.EquivalentTo(new byte[] { 0x41, 0x42, 0x43 }));
 
                 Assert.That((string)getBack.typeArray[0], Is.EqualTo("5argonTheGod"));
                 Assert.That(getBack.typeArray[1], Is.EqualTo(6789));
-                Debug.Log($"{(string)getBack.typeArray[2]}");
                 var timeInArray = DateTime.Parse((string)getBack.typeArray[2]).ToUniversalTime();
 
                 Assert.That(timeInArray.Year, Is.EqualTo(dt.Year));

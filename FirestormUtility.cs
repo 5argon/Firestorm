@@ -5,6 +5,14 @@ using E7.Firebase.LitJson;
 
 namespace E7.Firebase
 {
+    /// <summary>
+    /// Tries to emulate : https://jskeet.github.io/google-cloud-dotnet/docs/Google.Cloud.Firestore.Data/datamodel.html#server-side-timestamp
+    /// </summary>
+    [System.AttributeUsage(System.AttributeTargets.Field, Inherited = false, AllowMultiple = true)]
+    public sealed class ServerTimestamp : System.Attribute
+    {
+    }
+
     public static class FirestormUtility
     {
         public static (string typeString, object objectForJson) FormatForValueJson(object toFormat)
@@ -21,6 +29,8 @@ namespace E7.Firebase
                     return ("integerValue", Convert.ToInt32(en).ToString());
                 case double dbl:
                     return ("doubleValue", dbl);
+                case byte[] by:
+                    return ("bytesValue", by);
                 case string st:
                     return ("stringValue", st);
                 case bool bl:
@@ -63,10 +73,13 @@ namespace E7.Firebase
                 {
                     //Debug.Log($"Propp {field.Name}");
                     writer.WritePropertyName(field.Name);
-                    var fieldObject = field.GetValue(v);
-                    WriterDecision(fieldObject);
 
-                    void WriterDecision(object obj)
+                    bool hasTimestampAttribute = field.GetCustomAttribute<ServerTimestamp>() != null;
+                    var fieldObject = field.GetValue(v);
+
+                    WriterDecision(fieldObject, hasTimestampAttribute);
+
+                    void WriterDecision(object obj, bool timestampAttribute = false)
                     {
                         writer.WriteObjectStart();
                         var formatted = FirestormUtility.FormatForValueJson(obj);
@@ -84,6 +97,11 @@ namespace E7.Firebase
                                 }
                                 writer.WriteArrayEnd();
                                 writer.WriteObjectEnd();
+                                break;
+                            case byte[] by:
+                                UnityEngine.Debug.Log($"WRITING BYTE");
+                                writer.WritePropertyName(formatted.typeString);
+                                writer.Write(Convert.ToBase64String((byte[])formatted.objectForJson));
                                 break;
                             default:
                                 if (formatted.typeString == "mapValue")

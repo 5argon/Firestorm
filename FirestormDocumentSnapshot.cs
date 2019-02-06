@@ -99,7 +99,7 @@ namespace E7.Firebase
             writer.WriteObjectEnd();
 
             formattedDataJson =  writer.ToString();
-            Debug.Log($"{formattedDataJson}");
+            //Debug.Log($"{formattedDataJson}");
 
             void ValueTextToWrite(string valueText, object value)
             {
@@ -119,6 +119,9 @@ namespace E7.Firebase
                         break;
                     case "booleanValue":
                         writer.Write((bool)value);
+                        break;
+                    case "bytesValue":
+                        writer.Write((string)value);
                         break;
                     case "arrayValue":
                         writer.WriteArrayStart();

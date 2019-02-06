@@ -61,6 +61,7 @@ namespace FirestormTest
         {
             public string typeString;
             public double typeNumber;
+            public byte[] typeBytes;
             public List<object> typeArray; //array is sandwiched at center to increase JSON complexity..
             public DateTime typeTimestamp;
             public TestStructInner typeMap;
@@ -99,6 +100,9 @@ namespace FirestormTest
         },
         ""typeNumber"": {
           ""doubleValue"": 23.44
+        },
+        ""typeBytes"": {
+          ""bytesValue"": ""QUJD""
         },
         ""typeBoolean"": {
           ""booleanValue"": true

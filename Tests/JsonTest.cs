@@ -31,6 +31,7 @@ namespace FirestormTest
 
             Assert.That(doc.fields["typeTimestamp"]["timestampValue"], Is.EqualTo("2019-01-27T17:00:00Z"), "Literally the time text because the other side is an object");
             Assert.That(doc.fields["typeString"]["stringValue"], Is.EqualTo("hey"));
+            Assert.That(doc.fields["typeBytes"]["bytesValue"], Is.EqualTo("QUJD"));
             Assert.That(doc.fields["typeNumber"]["doubleValue"], Is.EqualTo(23.44));
             Assert.That(doc.fields["typeNumberInt"]["integerValue"], Is.EqualTo("1234"));
             Assert.That(doc.fields["typeBoolean"]["booleanValue"], Is.EqualTo(true));
@@ -88,6 +89,7 @@ namespace FirestormTest
             Assert.That(ts.typeString, Is.EqualTo("hey"));
             Assert.That(ts.typeNumber, Is.EqualTo(23.44));
             Assert.That(ts.typeNumberInt, Is.EqualTo(1234));
+            Assert.That(ts.typeBytes, Is.EquivalentTo(new byte[] { 0x41, 0x42, 0x43 }));
             Assert.That(ts.typeBoolean, Is.EqualTo(true));
             Assert.That((string)ts.typeArray[0], Is.EqualTo("in the array!"));
             Assert.That((string)ts.typeArray[1], Is.EqualTo("2018-02-16T14:09:04.978706Z"), "Because a list of object is the receiver, it could not tell LitJSON that this one should be DateTime. You get a string date time instead.");
@@ -105,6 +107,7 @@ namespace FirestormTest
             ts.typeNumberInt = 555;
             ts.typeBoolean = false;
             ts.typeEnum = TestEnum.B;
+            ts.typeBytes = new byte[] { 0x41, 0x42, 0x43 };
 
             var minPlus2 = DateTime.MinValue + TimeSpan.FromHours(2);
             ts.typeMap = new TestStructInner
@@ -150,6 +153,7 @@ namespace FirestormTest
             Assert.That(getBack.typeNumberInt, Is.EqualTo(555));
             Assert.That(getBack.typeBoolean, Is.EqualTo(false));
             Assert.That(getBack.typeEnum, Is.EqualTo(TestEnum.B));
+            Assert.That(getBack.typeBytes, Is.EquivalentTo(new byte[] { 0x41, 0x42, 0x43 }));
 
             Assert.That((string)getBack.typeArray[0], Is.EqualTo("5argonTheGod"));
             Assert.That(getBack.typeArray[1], Is.EqualTo(6789));
