@@ -2,7 +2,7 @@
 
 ![icon](.icon.png)
 
-Makeshift Cloud Firestore C# API that works with Unity via REST API. Contains only basic functions. "Makeshift" means I wrote everything very hurriedly. I am ready to deprecate all of this when the real thing came out.
+Makeshift Cloud Firestore C# API that works on Unity via REST API, by `UnityWebRequest` that can ensure cross-platform support. Only basic functions implemented. "Makeshift" means I wrote everything very hurriedly and the performance is really bad. I am ready to deprecate all of this when the real thing came out.
 
 # Status
 
@@ -27,7 +27,7 @@ For usage of the real thing please see : https://jskeet.github.io/google-cloud-d
 - Use the currently available Unity Firebase SDK Auth to login before performing any Firestorm call.
 - Firestorm will check on `FirebaseAuth.DefaultInstance.CurrentUser` and do `TokenAsync()`.
 - The token will be an input to perform REST API call to Cloud Firestore.
-- REST API performed by `UnityWebRequest`, which hopefully Unity will take care so it works with all platforms. (apparently Android could not do UWR PATCH header.. whoops)
+- REST API performed by `UnityWebRequest`, which hopefully Unity will take care so it works with all platforms. (apparently Android could not do `UnityWebRequest` PATCH header.. whoops)
 - There is nothing related to service account. I don't want to add external dependency to the Firebase Admin package.
 - The Firestorm API is designed to roughly resemble C# Firestore API so that the transition to the real thing is not painful when it arrives.
 
@@ -95,8 +95,7 @@ I made this just enough to adopt Firestore as soon as possible. Features are at 
 - Ordering of a query is locked to **ascending**. When creating a composite index please use only ascending index.
 - `AddAsync` on the collection does not return the newly created document's reference but just the generated document ID.
 - Exception throwing is probably not so good. But I tried to bubble up the error from Google's message from JSON REST response download handler as much as possible. (You will at least see HTTP error code)
-
-Let's wait for the Unity SDK for those. (They are already all supported in regular C# Firestore SDK)
+- Only one type of sentinel value supported which is the server time. You can put `[ServerTimestamp]` attribute on any `DateTime` field that is on the **top level** of your data to write/create and it will ask the server to put a timestamp there via `DocumentTransform` REST API of `commit` command. (The top level requirement is because I am just too lazy to make it drill down and find every attributes..) See other sentinel values that are not supported, but should be in the real SDK : https://github.com/googleapis/google-cloud-dotnet/blob/master/apis/Google.Cloud.Firestore/Google.Cloud.Firestore/FieldValue.cs
 
 ## How to use
 
@@ -195,7 +194,7 @@ But in this build there are caveats :
 
 ## "Oh no REST sucks, why don't you use gRPC?"
 
-In short I gave up, but it looks like a better than REST way if done right. It is just too messy with Unity. (In normal C# where NUGET is usable I would do RPC way.) Also the official C# API for Firestore uses the RPC + protobuf way, so no JSON mess like what I have here.
+In short I gave up, but it looks like a better than REST way if done right. It is just too messy with Unity. (In normal C# where NUGET is usable I would do RPC way.) Also the official C# API for Firestore uses the RPC + protobuf way, so no JSON mess like what I have here. [One person even said he has successfully use gRPC from Unity](https://groups.google.com/forum/#!topic/firebase-talk/SJIgIN8hZJg), but since I have come a long way with `UnityWebRequest` I might as well continue using this as I wait. (But gRPC way will provide you with the interface most likely equal to upcoming Unity Firestore SDK, not an imitaion like Firestorm.)
 
 ### What is it
 
@@ -223,7 +222,7 @@ The `yaml` file would be updated/changed in the future? I don't know..
 
 You will now notice that the `artman` does not include the `Firestore.Admin` section, so you cannot do gRPC with admin API. Also it is missing some more references, you will have to install more Nuget package such as [CommonProtos](https://www.nuget.org/packages/Google.Api.CommonProtos/). And in an hours or two maybe you will arrive with the same "unloading assembly" error as me?
 
-## How about Google.Cloud.Firestore
+## How about just installing Google.Cloud.Firestore and its dependencies
 
 When I do 
 
@@ -231,7 +230,7 @@ When I do
 nuget install google.cloud.firestore -Prerelease
 ```
 
-I got tons of related Nuget which in turn resolves into gRPC again. I think it is scary and difficult to get it workinrisky g (at runtime too) so I didn't continue this path either.
+I got tons of related Nuget which in turn resolves into gRPC again. I think it is scary and difficult to get it working (at runtime too) so I didn't continue this path either. Let's trust `UnityWebRequest`!!
 
 # License
 

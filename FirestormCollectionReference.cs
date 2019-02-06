@@ -146,7 +146,7 @@ namespace E7.Firebase
 
             string newJo = "{ \"documents\" : [ " + string.Join(",", collect) + " ] }";
 
-            Debug.Log($"this is new jo {newJo}");
+            //Debug.Log($"this is new jo {newJo}");
             return new FirestormQuerySnapshot(newJo);
         }
 

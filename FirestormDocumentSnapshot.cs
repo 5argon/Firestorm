@@ -66,7 +66,7 @@ namespace E7.Firebase
 
                 var mask = new DocumentMask { fieldPaths = topLevelFields.Concat(mapFields).ToArray() };
                 var m = JsonMapper.ToJson(mask);
-                Debug.Log($"Made mask {m}");
+                //Debug.Log($"Made mask {m}");
                 return m;
             }
         }

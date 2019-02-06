@@ -334,7 +334,7 @@ namespace FirestormTest
                 };
                 await TestDocument1.SetAsync<ServerTimestamper>(st, SetOption.Overwrite);
                 var getBack = (await TestDocument1.GetSnapshotAsync()).ConvertTo<ServerTimestamper>();
-                Debug.Log($"Get back {getBack.myOwnTime} / {getBack.needServerTime}");
+                Assert.That((getBack.needServerTime - getBack.myOwnTime).TotalSeconds, Is.Not.Zero, "The same value sent came back different! Wow!");
             }
         }
 

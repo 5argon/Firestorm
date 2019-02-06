@@ -84,7 +84,8 @@ namespace E7.Firebase
             }
 
             //Build a path for commit. Works both if it is a new document or existing document because we are using `commit` API and not `createDocument` / `patch`.
-            var doc = new FirestormDocumentForCommit($"{FirestormConfig.Instance.DocumentPathFromProjects}{stringBuilder.ToString()}", docSnap.Document);
+            string documentPath = $"{FirestormConfig.Instance.DocumentPathFromProjects}{stringBuilder.ToString()}";
+            var doc = new FirestormDocumentForCommit(documentPath, docSnap.Document);
 
             var writeUpdate = new WriteUpdate
             {
@@ -92,14 +93,23 @@ namespace E7.Firebase
                 update = doc,
             };
 
-            //Add a server time sentinel value support
+            //Add a server time sentinel value support. Scans only top level fields because I am lazy
+            var fieldsWithTimestampSentinel = typeof(T).GetFields().Where(x => x.GetCustomAttributes(typeof(ServerTimestamp), inherit: false).Length != 0).Select(x => x.Name);
+
+            FieldTransform[] fieldTransforms = fieldsWithTimestampSentinel.Select(x => new FieldTransform { fieldPath = x, setToServerValue = ServerValue.REQUEST_TIME }).ToArray();
+
             var writeServerTime = new WriteServerTime
             {
+                transform = new DocumentTransform
+                {
+                    document = documentPath,
+                    fieldTransforms = fieldTransforms
+                }
             };
 
             var commit = new CommitUpdate
             {
-                writes = new WriteUpdate[] { writeUpdate },
+                writes = fieldTransforms.Length == 0 ? new WriteUpdate[] { writeUpdate } : new IWrite[] { writeUpdate, writeServerTime },
             };
 
             //byte[] postData = Encoding.UTF8.GetBytes(documentJson);
@@ -114,7 +124,7 @@ namespace E7.Firebase
             var jsonPostData = writer.ToString();
 
             byte[] postData = Encoding.UTF8.GetBytes(jsonPostData);
-            Debug.Log($"JPOST {jsonPostData}");
+            //Debug.Log($"JPOST {jsonPostData}");
 
             //lol Android does not support custom verb for UnityWebRequest so we could not use "PATCH"
             //(https://docs.unity3d.com/Manual/UnityWebRequest.html)

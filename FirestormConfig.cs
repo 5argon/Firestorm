@@ -133,10 +133,10 @@ namespace E7.Firebase
             }
             var token = await Firestorm.AuthInstance.CurrentUser.TokenAsync(forceRefresh: false);
             uwr.SetRequestHeader("Authorization", $"Bearer {token}");
-            Debug.Log($"Sending {uwr.uri} {uwr.url}");
+            Debug.Log($"Sending UWR to {uwr.uri} {uwr.url}");
             var ao = uwr.SendWebRequest();
             await ao.WaitAsync();
-            Debug.Log($"Done! {ao.webRequest.isDone} {ao.webRequest.isHttpError} {ao.webRequest.isNetworkError} {ao.webRequest.error} {ao.webRequest.downloadHandler?.text}");
+            Debug.Log($"Done! HTTP Error : {ao.webRequest.isHttpError} NW Error : {ao.webRequest.isNetworkError} Error :  {ao.webRequest.error} {ao.webRequest.downloadHandler?.text}");
             if (ao.webRequest.isHttpError || ao.webRequest.isNetworkError)
             {
                 ErrorMessage googleError = default;
