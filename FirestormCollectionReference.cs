@@ -126,6 +126,7 @@ namespace E7.Firebase
             string postJson = JsonMapper.ToJson(rq);
             //File.WriteAllText(Application.dataPath + $"/LITPOST{UnityEngine.Random.Range(0, 100)}.txt", postJson);
             byte[] postData = Encoding.UTF8.GetBytes(postJson);
+            Debug.Log($"JPOST {postJson}");
 
             //Path is the parent of this collection.
             var uwr = await FirestormConfig.Instance.UWRPost($"{parentDocument}:runQuery", null, postData);

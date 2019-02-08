@@ -52,13 +52,14 @@ LitJSON is baked in the package. It is literally "little" that I could embed it 
 
 After you got the document snapshot, `snapshot.ConvertTo<T>` will change JSON into your C# data container. How that works is according to LitJSON and may not be the same as the real upcoming SDK. Things to watch out : 
 
-- To receive `blob` use `byte[]`.
+- To receive `blob` use `byte[]`. This is not a default behaviour of LitJSON, it is my modification.
 - To receive CFS array you use `List<object>`. However, since all in this list are object LitJSON don't know which type it should convert to and boxed by `object`. For example if you have an array containing integer, double, timestamp, you will get integer as string and timestamp as string as that was what Google is sending from the server. Double is a number. Boolean is correctly a boolean. For plain fields, receiving into `DateTime` will get you `DateTime` correctly as expected as LitJson can see the type and parse the string accordingly.
 - Look at LitJson test to see what else can receive what : https://github.com/LitJSON/litjson/blob/develop/test/JsonMapperTest.cs
+- Other modification includes interpreting the final parsing fail case as `Dictionary<string,object>` boxed in `object` instead of skipping completely, and change `DateTime` parsing to match with Firebase's format. (Trailing "Z" format)
 
 ## Why not Unity's JsonUtility
 
-It sucks! The JSON from Firestore has polymorphic union fields (see [example](https://firebase.google.com/docs/firestore/reference/rest/v1beta1/Value)) and it is impossible to work with without good iteration method on the JSON. I used Json.NET to iterate and peel out the JSON with `JObject` LINQ support and to tailor made a JSON that Firebase would accept.
+It sucks! The JSON from Firestore has polymorphic union fields (see [example](https://firebase.google.com/docs/firestore/reference/rest/v1beta1/Value)) and it is impossible to work with without good iteration method on the JSON. LitJSON and Json.NET could iterate through json (with `JsonData` and `JObject` respectively) and also build a hand-made json from scratch.
 
 
 ## Why not Newtonsoft Json.NET
@@ -110,11 +111,16 @@ You will want to be able to pass all tests as database is a sensitive thing and 
 The test will run against your **real** Firebase account and **cost real money** as it writes and cleans up the Firestore on every test (but probably not much). There are things that is required to setup beforehand.
 
 - Do all the things that is required to make `FirebaseAuth` works in Unity. Install Unity SDK. Add `google-services.json`, `GoogleService-Info.plist` to project, etc.
-- In the right click create asset menu create an asset of `FirestormConfig` and put it in `Resources` folder. Fill the form of super user information, this will be sent to Cloud Function for it to use Admin SDK to generate and destroy a test user.
+- In the right click create asset menu create an asset of `FirestormConfig` and put it in `Resources` folder. Fill the form of super user information, this will be sent to Cloud Function for it to use Admin SDK to generate and destroy a test user. You don't have to manually register this user in the Auth control panel.
 - Go to your Firestore rules and add all-allowed rule for super user email like this : `allow read, write: if request.auth.token.email == "super@gmail.com";`
-- Deploy a required cloud function named exactly this : `firestormTestCleanUp`. Here is the content. 
+- Deploy a required Firebase Cloud Function named exactly this : `firestormTestCleanUp`. It allows us to setup and teardown test without Admin API at client side. Here is the content in TypeScript. If you use JavaScript, it should require some edit.
 
 ```typescript
+
+import * as functions from 'firebase-functions'
+import * as admin from 'firebase-admin'
+import { HttpsError } from 'firebase-functions/lib/providers/https'
+admin.initializeApp()
 
 function testSecretCheck(testSecret: string) {
     if (testSecret !== "notasecret") {
@@ -124,9 +130,9 @@ function testSecretCheck(testSecret: string) {
 
 /**
  * Used for unit testing. Delete and recreate user on every test.
- * @param doNotCreateUser This is true on [TearDown] in C# so that it just delete the user and not create back. After a test there should not be any test user left.
+ * @param recreateUser This is true on [TearDown] in C# so that it just delete the user and not create back. After a test there should not be any test user left.
  */
-async function ensureFreshUser(email: string, password: string, doNotCreateUser: boolean) {
+async function ensureFreshUser(email: string, password: string, recreateUser: boolean) {
     try {
         const superUser: admin.auth.UserRecord = await admin.auth().getUserByEmail(email)
         //If the user exist delete him.
@@ -138,7 +144,7 @@ async function ensureFreshUser(email: string, password: string, doNotCreateUser:
         }
         //Does not exist, it is fine.
     }
-    if (doNotCreateUser === false) {
+    if (recreateUser === false) {
         await admin.auth().createUser({ email: email, password: password })
     }
 }
@@ -158,7 +164,7 @@ export const firestormTestCleanUp = functions.https.onCall(async (data, context)
     try {
         testSecretCheck(data.testSecret)
         await Promise.all([
-            ensureFreshUser(data.superUserId, data.superUserPassword, data.isTearDown),
+            ensureFreshUser(data.superUserId, data.superUserPassword, data.recreateUser),
             //No need to demolish everything, the test uses just these 5 documents.
             admin.firestore().collection(testCollectionName).doc(testDataName1).delete(),
             admin.firestore().collection(testCollectionName).doc(testDataName2).delete(),
@@ -174,7 +180,6 @@ export const firestormTestCleanUp = functions.https.onCall(async (data, context)
 
 Notice `testSecretCheck` method, you can change the password to match what's in your `FirestormConfig`. Every time you run each test this cloud function will run 2 times at set up and at tear down. (Costing you small amount of money)
 
-- Put required data in the `FirestormConfig` file including super user details. This will allow us to run test without relying on including Firebase Admin API.
 - Since index takes several minutes to create I cannot put it in the test without inconvenience. Go create a composite index on collection ID `firestorm-test-collection` with field `a` and `b` as both Ascending. Wait until it finishes.
 - Connect to the internet and you should be able to pass all **Edit Mode** test.
 
@@ -192,23 +197,21 @@ But in this build there are caveats :
 - Your Package name/Bundle ID will change to a fixed name : **com.UnityTestRunner.UnityTestRunner**. This will cause problem for `google-services.json` and `GoogleService-Info.plist` file as it looks to match the name and now your Firebase Unity SDK cannot initialize the Auth. (Apparently the Android ones can hold multiple package name but not iOS ones)
 - To fix, please create a new set of Android/iOS app with exactly that test name in the same Firebase App (Press "Add app" button). Then download that new set of `google-services.json` and `GoogleService-Info.plist` and rename the old ones to something else because it search the whole project and pick them up by name. After the test remember to rename switch to the real one.
 
-## "Oh no REST sucks, why don't you use gRPC?"
+## "Oh no REST sucks, don't you know gRPC exist?"
 
 In short I gave up, but it looks like a better than REST way if done right. It is just too messy with Unity. (In normal C# where NUGET is usable I would do RPC way.) Also the official C# API for Firestore uses the RPC + protobuf way, so no JSON mess like what I have here. [One person even said he has successfully use gRPC from Unity](https://groups.google.com/forum/#!topic/firebase-talk/SJIgIN8hZJg), but since I have come a long way with `UnityWebRequest` I might as well continue using this as I wait. (But gRPC way will provide you with the interface most likely equal to upcoming Unity Firestore SDK, not an imitaion like Firestorm.)
 
 ### What is it
 
-It lets you do RPC with generated code, so it feels like you are calling regular function and it magically do remote calls. The code is generated from Protobuf file. The files in GRPC folder was grabbed from generated C# files from [Google API repo](https://github.com/googleapis/googleapis).
-
-Therefore the code to talk with Firestore in Firestorm will feel just kinda like we already have Unity SDK, because the generated gRPC codes are in C# already. (Not by doing REST to a URL, etc.)
+It lets you do RPC with generated code, so it feels like you are calling regular function and it magically do remote calls. The C# side of code code is generated from Protobuf file from [Google API repo](https://github.com/googleapis/googleapis).
 
 ### What is the problem
 
-Basically the "unloading assembly because it could cause crash in runtime" error message. I add and add all requirement by Nuget chain but finally arrives at the point where I don't know what is the cause of that anymore.
+Basically the "unloading assembly because it could cause crash in runtime" error message in Unity. Usually this message has something that cause the problem stated below but I have arrive at the point where **nothing** is stated after following all requirement by Nuget chain.
 
 ### Some pointers if you want to try doing it gRPC way
 
-First install gRPC stuff, there is a beta `unitypackage` by Google too. See [here](https://packages.grpc.io/archive/2019/01/f7a4d1e0c74f3c76bd09d8f54ab1d2c357df2788-6affcdc9-9f89-475b-817b-14263e865b8e/index.xml) for example you can see **grpc_unity_package.1.19.0-dev.zip**. Then install gRPC csharp plugin from somewhere, Google it and you should found it. It allows `protoc` to generate client stub methods when it see `service` syntax in the `.proto` file.
+First install gRPC stuff, there is a beta `unitypackage` by Google. See [here](https://packages.grpc.io/archive/2019/01/f7a4d1e0c74f3c76bd09d8f54ab1d2c357df2788-6affcdc9-9f89-475b-817b-14263e865b8e/index.xml) for example you can see **grpc_unity_package.1.19.0-dev.zip**. Then install gRPC csharp plugin from somewhere, Google it and you should found it. It allows `protoc` to generate client stub methods when it see `service` syntax in the `.proto` file.
 
 (At the time when you are reading this things might changed already.) Use `artman` with things in the `googleapis` repo. Go to [here](https://googleapis-artman.readthedocs.io/en/latest/installing.html) and follow it. You will be installing `pipsi` and starting `docker` daemon before you can use `artman`, then you will have to download Docker image of Google's `artman` by following the terminal. Note that all the things surrounding gRPC and `googleapis` seems to be sparsely documented than usual.
 
@@ -234,7 +237,7 @@ I got tons of related Nuget which in turn resolves into gRPC again. I think it i
 
 # License
 
-The license is MIT as you can see in `LICENSE.txt`, and to stress this is provided as-is without any warranty as said in the MIT license. (I understand that database is kind of a dangerous thing, and my programming on Firestorm is very rough as it is only a temporary solution while I am waiting for the official one.)
+The license is MIT as you can see in `LICENSE.txt`, and to stress this is provided as-is without any warranty as said in the MIT license.
 
 # Blatant advertisement
 

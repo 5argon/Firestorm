@@ -20,25 +20,30 @@ namespace E7.Firebase
 
         public static void CreateEditModeInstance()
         {
-            DisposeEditModeInstance();
-            appInstance = FirebaseApp.Create(FirebaseApp.DefaultInstance.Options, $"TestInstance {UnityEngine.Random.Range(10000, 99999)}");
+            if (Application.isPlaying == false)
+            {
+                DisposeEditModeInstance();
+                appInstance = FirebaseApp.Create(FirebaseApp.DefaultInstance.Options, $"TestInstance {UnityEngine.Random.Range(10000, 99999)}");
+            }
         }
 
         public static void DisposeEditModeInstance()
         {
-            //Somehow this crashes Unity lol... the network is left running in the other thread it seems.
-            appInstance?.Dispose();
+            if (Application.isPlaying == false)
+            {
+                //Somehow this crashes Unity lol... the network is left running in the other thread it seems.
+                appInstance?.Dispose();
+            }
         }
 
-        public static FirebaseAuth AuthInstance
+        public static FirebaseApp AppInstance
         {
             get
             {
                 if (Application.isPlaying)
                 {
                     appInstance = FirebaseApp.DefaultInstance;
-                    authInstance = FirebaseAuth.GetAuth(appInstance);
-                    return authInstance;
+                    return appInstance;
                 }
                 else
                 {
@@ -48,7 +53,23 @@ namespace E7.Firebase
                     {
                         throw new FirestormException($"You forgot to call CreateEditModeInstance before running in edit mode");
                     }
-                    authInstance = FirebaseAuth.GetAuth(appInstance);
+                    return appInstance;
+                }
+            }
+        }
+
+        public static FirebaseAuth AuthInstance
+        {
+            get
+            {
+                if (Application.isPlaying)
+                {
+                    authInstance = FirebaseAuth.DefaultInstance;
+                    return authInstance;
+                }
+                else
+                {
+                    authInstance = FirebaseAuth.GetAuth(AppInstance);
                     return authInstance;
                 }
             }

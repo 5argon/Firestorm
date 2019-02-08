@@ -104,23 +104,6 @@ namespace E7.Firebase
             return await SetupAndSendUWRAsync(uwr);
         }
 
-        /// <param name="path">To append to the base document path. It must include a slash, because the other possibility is the colon.</param>
-        internal async Task<UnityWebRequest> UWRPatch(string path, (string, string)[] queryParameters, byte[] postData)
-        {
-            var uwr = BuildPost(path, queryParameters, postData);
-
-            // Unity give us no PATCH constructor
-            uwr.method = "PATCH";
-
-            // This does not work to fix Android problem (https://stackoverflow.com/questions/25163131/httpurlconnection-invalid-http-method-patch)
-            // I thought it could help fake PATCH on Android while being a POST request
-            // But CFS server do not look at the override at all and returns bad request for POST which updates the data.
-            // I left it here just in case it is supported in the future.
-            uwr.SetRequestHeader("X-HTTP-Method-Override", "PATCH");
-
-            return await SetupAndSendUWRAsync(uwr);
-        }
-
         /// <summary>
         /// Put the login token in the REST request. This waits for the request's reponse completely.
         /// </summary>

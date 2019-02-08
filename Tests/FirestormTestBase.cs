@@ -18,13 +18,13 @@ namespace FirestormTest
         /// <summary>
         /// Clean up using cloud function. Also delete and create the super user.
         /// </summary>
-        private async Task SetUpFirestoreForTest(bool isTearDown)
+        private async Task SetUpFirestoreForTest(bool recreateUser)
         {
             var ff = FirebaseFunctions.GetInstance(Firestorm.AuthInstance.App);
             var testCleanUp = ff.GetHttpsCallable("firestormTestCleanUp");
             var callResult = await testCleanUp.CallAsync(new Dictionary<string, object>
             {
-                ["isTearDown"] = isTearDown,
+                ["recreateUser"] = recreateUser,
                 ["testSecret"] = FirestormConfig.Instance.testSecret,
                 ["superUserId"] = FirestormConfig.Instance.superUserEmail,
                 ["superUserPassword"] = FirestormConfig.Instance.superUserPassword,
@@ -48,7 +48,7 @@ namespace FirestormTest
             Firestorm.AuthInstance.SignOut();
             yield return T().YieldWait(); async Task T()
             {
-                await SetUpFirestoreForTest(isTearDown: false);
+                await SetUpFirestoreForTest(recreateUser: true);
                 await SignInSuperUser();
             }
         }
@@ -58,7 +58,7 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await SetUpFirestoreForTest(isTearDown: true);
+                await SetUpFirestoreForTest(recreateUser: false);
             }
             //if you dispose before above, it hard crash unity lol
             if (Application.isPlaying == false)
