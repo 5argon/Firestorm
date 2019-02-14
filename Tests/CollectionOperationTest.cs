@@ -28,9 +28,9 @@ namespace FirestormTest
         {
             yield return T().YieldWait(); async Task T()
             {
-                await TestDocument2.SetAsync<TestDataAB>(new TestDataAB { a = 2, b = "y" }, SetOption.Overwrite);
-                await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 1, b = "x" }, SetOption.Overwrite);
-                await TestDocument3.SetAsync<TestDataAB>(new TestDataAB { a = 3, b = "z" }, SetOption.Overwrite);
+                await TestDocument2.SetAsync<TestDataAB>(new TestDataAB { a = 2, b = "y" });
+                await TestDocument1.SetAsync<TestDataAB>(new TestDataAB { a = 1, b = "x" });
+                await TestDocument3.SetAsync<TestDataAB>(new TestDataAB { a = 3, b = "z" });
 
                 //await Task.WhenAll(new Task<TestDataAB>[] { t1, t2, t3 });
                 var collection = await TestCollection.GetSnapshotAsync();
@@ -64,11 +64,11 @@ namespace FirestormTest
         private async Task SetupForQuery()
         {
             //Scrambled write order
-            await TestDocument3.SetAsync<TestDataABC>(new TestDataABC { a = 3, b = "z", c = 33.333 }, SetOption.Overwrite);
-            await TestDocument1.SetAsync<TestDataABC>(new TestDataABC { a = 1, b = "x", c = 11.111 }, SetOption.Overwrite);
-            await TestDocument2.SetAsync<TestDataABC>(new TestDataABC { a = 2, b = "y", c = 22.222 }, SetOption.Overwrite);
-            await TestDocument22.SetAsync<TestDataABC>(new TestDataABC { a = 22, b = "yo", c = 222.222 }, SetOption.Overwrite);
-            await TestDocument21.SetAsync<TestDataABC>(new TestDataABC { a = 21, b = "hey", c = 111.111 }, SetOption.Overwrite);
+            await TestDocument3.SetAsync<TestDataABC>(new TestDataABC { a = 3, b = "z", c = 33.333 });
+            await TestDocument1.SetAsync<TestDataABC>(new TestDataABC { a = 1, b = "x", c = 11.111 });
+            await TestDocument2.SetAsync<TestDataABC>(new TestDataABC { a = 2, b = "y", c = 22.222 });
+            await TestDocument22.SetAsync<TestDataABC>(new TestDataABC { a = 22, b = "yo", c = 222.222 });
+            await TestDocument21.SetAsync<TestDataABC>(new TestDataABC { a = 21, b = "hey", c = 111.111 });
         }
 
         [UnityTest]
@@ -218,11 +218,11 @@ namespace FirestormTest
             yield return T().YieldWait(); async Task T()
             {
                 var t1 = TestDocument1.SetAsync<PlayerWithFriends>(new PlayerWithFriends
-                { playerName = "5argon", friends = new object[] { "Suna", "Sompong" }.ToList() }, SetOption.Overwrite);
+                { playerName = "5argon", friends = new object[] { "Suna", "Sompong" }.ToList() });
                 var t2 = TestDocument2.SetAsync<PlayerWithFriends>(new PlayerWithFriends
-                { playerName = "Suna", friends = new object[] { "5argon", "Shun", "Hydrangea", "Eru" }.ToList() }, SetOption.Overwrite);
+                { playerName = "Suna", friends = new object[] { "5argon", "Shun", "Hydrangea", "Eru" }.ToList() });
                 var t3 = TestDocument3.SetAsync<PlayerWithFriends>(new PlayerWithFriends
-                { playerName = "Shuno413", friends = new object[] { "Suna", "Reef", "Hydrangea", "5argondesu" }.ToList() }, SetOption.Overwrite);
+                { playerName = "Shuno413", friends = new object[] { "Suna", "Reef", "Hydrangea", "5argondesu" }.ToList() });
 
                 await Task.WhenAll(new Task[] { t1, t2, t3 });
 

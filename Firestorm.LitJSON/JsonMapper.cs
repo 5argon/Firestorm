@@ -754,7 +754,7 @@ namespace E7.Firebase.LitJson
             }
 
             if (obj is IJsonWrapper) {
-                UnityEngine.Debug.Log($"JD {obj.GetType().Name}");
+                //UnityEngine.Debug.Log($"JD {obj.GetType().Name}");
                 if (writer_is_private)
                     writer.TextWriter.Write (((IJsonWrapper) obj).ToJson ());
                 else

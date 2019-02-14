@@ -8,6 +8,8 @@ using Firebase.Auth;
 using E7.Firebase.LitJson;
 using UnityEngine;
 
+using ValueObject = System.Collections.Generic.Dictionary<string, object>;
+
 namespace E7.Firebase
 {
     public struct FirestormDocumentReference
@@ -25,92 +27,161 @@ namespace E7.Firebase
 
         public FirestormCollectionReference Collection(string name) => new FirestormCollectionReference(this, name);
 
-        /// <summary>
-        /// Either make a new document, overwrites or update a subset of fields depending on SetOption.
-        /// Costs one read operation because it needs existing fields from the server.
-        /// Not sure if array is supported or not by using List<T> in the data?
-        /// 
-        /// There is no AddAsync (to make a new document in a collection without naming it) implemented like in the real C# API.
-        /// </summary>
-        public async Task SetAsync<T>(T documentDataToSet, SetOption setOption) where T : class
+        public async Task UpdateAsync<T>(T documentDataToSet) where T : class
         {
-            //Check if a document is there or not
-            var documentServerSnapshot = await GetSnapshotAsync();
+            await DocumentOpsInternal<T>(documentDataToSet, SetOption.MergeAll);
+        }
 
-            //Document "name" must not be set when creating a new one. The name should be in query parameter "documentId"
-            //When updating the name must also be blank. It uses the name from REST URL already.
-            string documentJsonToSet = FirestormUtility.ToJsonDocument(documentDataToSet, "");
-            //File.WriteAllText(Application.dataPath + "/snap.txt", documentJsonToSet);
+        public async Task SetAsync<T>(T documentDataToSet) where T : class
+        {
+            await DocumentOpsInternal<T>(documentDataToSet, SetOption.Overwrite);
+        }
 
-            //If there is a data.. we try to build the correct DocumentMask.
-            var docSnap = new FirestormDocumentSnapshot(documentJsonToSet);
-            string fieldMaskLocal = docSnap.FieldsDocumentMaskJson();
+        /// <summary>
+        /// If that value already exist in an array, it won't be added.
+        /// </summary>
+        public async Task ArrayAppendAsync<T>(string arrayFieldName, object[] toAdd) where T : class
+        {
+            await DocumentOpsInternal<T>(null, SetOption.ArrayAdd, (arrayFieldName, toAdd));
+        }
 
-            var localF = JsonMapper.ToObject<DocumentMask>(fieldMaskLocal);
-            var mergedFields = new HashSet<string>();
+        /// <summary>
+        /// If that value does not exist in an array, nothing would happen 
+        /// </summary>
+        public async Task ArrayRemoveAsync<T>(string arrayFieldName, object[] toAdd) where T : class
+        {
+            await DocumentOpsInternal<T>(null, SetOption.ArrayRemove, (arrayFieldName, toAdd));
+        }
 
-            if (setOption == SetOption.MergeAll)
+        private class ArrayDataWrap
+        {
+            public List<object> data;
+        }
+
+        /// <summary>
+        /// The clusterfuck
+        /// </summary>
+        private async Task DocumentOpsInternal<T>(T documentDataToSet, SetOption setOption, (string fieldPath, object[] objs) arrayOperation = default) where T : class
+        {
+            CommitUpdate commit = null;
+
+            //Build a path for commit. Works both if it is a new document or existing document because we are using `commit` API and not `createDocument` / `patch`.
+            string documentPath = $"{FirestormConfig.Instance.DocumentPathFromProjects}{stringBuilder.ToString()}";
+
+            //Add a server time sentinel value support. Scans only top level fields because I am lazy
+            var fieldsWithTimestampSentinel = typeof(T).GetFields().Where(x => x.GetCustomAttributes(typeof(ServerTimestamp), inherit: false).Length != 0).Select(x => x.Name);
+
+            FieldTransformTimestamp[] timestampFieldTransforms = fieldsWithTimestampSentinel.Select(x => new FieldTransformTimestamp { fieldPath = x, setToServerValue = ServerValue.REQUEST_TIME }).ToArray();
+
+            var writeTransformTimestamp = new WriteTransform
             {
-                //Getting fields of only local. The server will touch only field presents in the mask = merging.
-                foreach (var f in localF.fieldPaths)
+                transform = new DocumentTransform
                 {
-                    mergedFields.Add(f);
+                    document = documentPath,
+                    fieldTransforms = timestampFieldTransforms
                 }
-            }
-            else if (setOption == SetOption.Overwrite)
+            };
+
+            if (arrayOperation != default)
             {
-                //Getting fields of existing data.
-                //Patch a document, using fields from remote combined with local.
-                // Including all local fields ensure update
-                // Including remote fields that does not intersect with local = delete on the server
-                if (documentServerSnapshot.IsEmpty == false)
+                ITransform arrayTransform = null;
+                ValueObject[] valueToArrayTransform = arrayOperation.objs.Select(x => FirestormUtility.FormatForValueJson(x)).Select(x => new ValueObject { [x.typeString] = x.objectForJson }).ToArray();
+
+                if (setOption == SetOption.ArrayAdd)
                 {
-                    string fieldMaskRemote = documentServerSnapshot.FieldsDocumentMaskJson();
-                    var remoteF = JsonMapper.ToObject<DocumentMask>(fieldMaskRemote);
-                    foreach (var f in remoteF.fieldPaths)
+                    arrayTransform = new FieldTransformArrayAppend
+                    {
+                        fieldPath = arrayOperation.fieldPath,
+                        appendMissingElements = new AppendArray
+                        {
+                            values = valueToArrayTransform
+                        }
+                    };
+                }
+                else if (setOption == SetOption.ArrayRemove)
+                {
+                    arrayTransform = new FieldTransformArrayRemove
+                    {
+                        fieldPath = arrayOperation.fieldPath,
+                        removeAllFromArray = new RemoveArray
+                        {
+                            values = valueToArrayTransform,
+                        }
+                    };
+                }
+
+                var writeTransformArray = new WriteTransform
+                {
+                    transform = new DocumentTransform
+                    {
+                        document = documentPath,
+                        fieldTransforms = new ITransform[] { arrayTransform },
+                    }
+                };
+
+                commit = new CommitUpdate
+                {
+                    writes = timestampFieldTransforms.Length == 0 ? new WriteTransform[] { writeTransformArray } : new WriteTransform[] { writeTransformArray, writeTransformTimestamp },
+                };
+            }
+            else
+            {
+                //Check if a document is there or not
+                var documentServerSnapshot = await GetSnapshotAsync();
+
+                //Document "name" must not be set when creating a new one. The name should be in query parameter "documentId"
+                //When updating the name must also be blank. It uses the name from REST URL already.
+                string documentJsonToSet = FirestormUtility.ToJsonDocument(documentDataToSet, "");
+                //File.WriteAllText(Application.dataPath + "/snap.txt", documentJsonToSet);
+
+                //If there is a data.. we try to build the correct DocumentMask.
+                var docSnap = new FirestormDocumentSnapshot(documentJsonToSet);
+                string fieldMaskLocal = docSnap.FieldsDocumentMaskJson();
+
+                var localF = JsonMapper.ToObject<DocumentMask>(fieldMaskLocal);
+                var mergedFields = new HashSet<string>();
+                if (setOption == SetOption.MergeAll)
+                {
+                    //Getting fields of only local. The server will touch only field presents in the mask = merging.
+                    foreach (var f in localF.fieldPaths)
+                    {
+                        mergedFields.Add(f);
+                    }
+                }
+                else if (setOption == SetOption.Overwrite)
+                {
+                    //Getting fields of existing data.
+                    //Patch a document, using fields from remote combined with local.
+                    // Including all local fields ensure update
+                    // Including remote fields that does not intersect with local = delete on the server
+                    if (documentServerSnapshot.IsEmpty == false)
+                    {
+                        string fieldMaskRemote = documentServerSnapshot.FieldsDocumentMaskJson();
+                        var remoteF = JsonMapper.ToObject<DocumentMask>(fieldMaskRemote);
+                        foreach (var f in remoteF.fieldPaths)
+                        {
+                            mergedFields.Add(f);
+                        }
+                    }
+
+                    foreach (var f in localF.fieldPaths)
                     {
                         mergedFields.Add(f);
                     }
                 }
 
-                foreach (var f in localF.fieldPaths)
+                var doc = new FirestormDocumentForCommit(documentPath, docSnap.Document);
+
+                var writeUpdate = new WriteUpdate
                 {
-                    mergedFields.Add(f);
-                }
-            }
-            else
-            {
-                throw new NotImplementedException($"Set option {setOption} not implemented");
-            }
-
-            //Build a path for commit. Works both if it is a new document or existing document because we are using `commit` API and not `createDocument` / `patch`.
-            string documentPath = $"{FirestormConfig.Instance.DocumentPathFromProjects}{stringBuilder.ToString()}";
-            var doc = new FirestormDocumentForCommit(documentPath, docSnap.Document);
-
-            var writeUpdate = new WriteUpdate
-            {
-                updateMask = new DocumentMask { fieldPaths = mergedFields.ToArray() },
-                update = doc,
-            };
-
-            //Add a server time sentinel value support. Scans only top level fields because I am lazy
-            var fieldsWithTimestampSentinel = typeof(T).GetFields().Where(x => x.GetCustomAttributes(typeof(ServerTimestamp), inherit: false).Length != 0).Select(x => x.Name);
-
-            FieldTransform[] fieldTransforms = fieldsWithTimestampSentinel.Select(x => new FieldTransform { fieldPath = x, setToServerValue = ServerValue.REQUEST_TIME }).ToArray();
-
-            var writeServerTime = new WriteServerTime
-            {
-                transform = new DocumentTransform
+                    updateMask = new DocumentMask { fieldPaths = mergedFields.ToArray() },
+                    update = doc,
+                };
+                commit = new CommitUpdate
                 {
-                    document = documentPath,
-                    fieldTransforms = fieldTransforms
-                }
-            };
-
-            var commit = new CommitUpdate
-            {
-                writes = fieldTransforms.Length == 0 ? new WriteUpdate[] { writeUpdate } : new IWrite[] { writeUpdate, writeServerTime },
-            };
+                    writes = timestampFieldTransforms.Length == 0 ? new WriteUpdate[] { writeUpdate } : new IWrite[] { writeUpdate, writeTransformTimestamp },
+                };
+            }
 
             //byte[] postData = Encoding.UTF8.GetBytes(documentJson);
 
@@ -152,13 +223,17 @@ namespace E7.Firebase
         {
         }
 
+        private interface ITransform
+        {
+        }
+
         private class WriteUpdate : IWrite
         {
             public DocumentMask updateMask;
             public FirestormDocumentForCommit update;
         }
 
-        private class WriteServerTime  : IWrite
+        private class WriteTransform : IWrite
         {
             public DocumentTransform transform;
         }
@@ -166,13 +241,35 @@ namespace E7.Firebase
         private class DocumentTransform
         {
             public string document;
-            public FieldTransform[] fieldTransforms;
+            public ITransform[] fieldTransforms;
         }
 
-        private class FieldTransform
+        private class FieldTransformTimestamp : ITransform
         {
             public string fieldPath;
             public ServerValue setToServerValue = ServerValue.REQUEST_TIME;
+        }
+
+        private class FieldTransformArrayAppend : ITransform
+        {
+            public string fieldPath;
+            public AppendArray appendMissingElements;
+        }
+
+        private class FieldTransformArrayRemove : ITransform
+        {
+            public string fieldPath;
+            public RemoveArray removeAllFromArray;
+        }
+
+        private class AppendArray
+        {
+            public ValueObject[] values;
+        }
+
+        private class RemoveArray
+        {
+            public ValueObject[] values;
         }
 
         private enum ServerValue 
@@ -212,7 +309,9 @@ namespace E7.Firebase
         //Mask field follows the one on the server. So it deletes fields on the server on PATCH request
         Overwrite,
         //Mask field follows all of the one to write.
-        MergeAll
+        MergeAll,
+        ArrayAdd,
+        ArrayRemove,
     }
 
 }

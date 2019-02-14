@@ -14,6 +14,21 @@ namespace FirestormTest
 {
     public class JsonTest : FirestormTestDataStructure
     {
+        private class ArrayDataWrap
+        {
+            public List<object> data;
+        }
+        [Test]
+        public void JArray()
+        {
+            var json = FirestormUtility.ToJsonDocument(new ArrayDataWrap { data = new object[] { 11, "hi", false }.ToList() }, "");
+            //clusterfuck of drill down lol
+            var valuesAndArrayData = (JsonData)((Dictionary<string, object>)new FirestormDocumentSnapshot(json).Document.fields.First().Value.First().Value).First().Value;
+            Debug.Log($"{ valuesAndArrayData.UnderlyingPrimitive().GetType().Name}");
+            var casted = (List<JsonData>)valuesAndArrayData.UnderlyingPrimitive();
+        }
+
+
         [Test]
         public void LitJsonHandlesSupportedType()
         {
