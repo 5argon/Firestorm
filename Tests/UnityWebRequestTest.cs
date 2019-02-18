@@ -7,7 +7,7 @@ using System.Reflection;
 using E7.Firebase;
 using System.Linq;
 
-namespace FirestormTest
+namespace FirestormTesto
 {
     public class UnityWebRequestTest : FirestormTestDataStructure
     {

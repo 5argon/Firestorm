@@ -6,9 +6,10 @@ Makeshift Cloud Firestore C# API that works on Unity via REST API, by `UnityWebR
 
 # Status
 
-- Editor : All tests passed. If you only care about development with CFS and not the deploy version, you can use this now for the time being.
-- iOS : I don't have 64-bit devices with me. The latest version of Unity has a hard crash bug when built to 32-bit device.
-- Android : The weakness is it is not be able to use PATCH header from `UnityWebRequest`. I have since changed PATCH (`patch` REST API) to POST (`commit` REST API) but not tested yet.
+- Editor : All tests passed in both edit and play mode.
+- iOS : Testing...
+- Android : Real device test passed.
+
 - There are tons of unprofessional `Debug.Log` left in the code currently, planned to remove once I can get everything work on iOS and Android.
 - Right now I am focusing on editor-only work that wrap over Firestorm, so not going to make it work on the real device for now since Firestorm is fully usable in editor right now. I am guessing in March the official Unity SDK would come out and if that is the case then I won't lose as much time reinventing the wheel.
 
@@ -81,7 +82,7 @@ I made this just enough to adopt Firestore as soon as possible. Features are at 
 
 - Type excluded in a Document : Map inside a map (Map = dictionary of JSON not map as in world map), Geopoint (LatLng), Map for 1 level in a document is fine.
 - Any mentioned types that is in an array. Basically, recursive programming is hard and I don't want to mess with it + my game does not have nested map design. But hey! Array is implemented! A friend list per player for example can be strings in an array.
-- Receiving type must be a `class` with all public fields name matching names from Firestore. (It can't even be a property, see the unity test.) On getting component you must provide a concrete **type generic** with all fields known except `List<object>` which is used to receive Firestore array. It must be a `class` because it would be easy to do reflection to populate its value. It will be reflected by field name of the document to match with what's in your type. The remaining fields are left at default. You cannot substitute any fields with, for example, `Dictionary<string, string>`.
+- Receiving type must be a `class` with all public fields name matching names from Firestore **exactly**, no missing fields, no unused fields. (It can't even be a property, see the unity test.) On getting component you must provide a concrete **type generic** with all fields known except `List<object>` which is used to receive Firestore array. It must be a `class` because it would be easy to do reflection to populate its value. It will be reflected by field name of the document to match with what's in your type
 - Transaction not supported. (Used for atomic operation that rolls back together when one thing fails)
 - Manual rollback not supported. (There is actually a REST endpoint for this, but too difficult to bother)
 - Batched write not supported.
@@ -96,8 +97,8 @@ I made this just enough to adopt Firestore as soon as possible. Features are at 
 - Ordering of a query is locked to **ascending**. When creating a composite index please use only ascending index.
 - `AddAsync` on the collection does not return the newly created document's reference but just the generated document ID.
 - Exception throwing is probably not so good. But I tried to bubble up the error from Google's message from JSON REST response download handler as much as possible. (You will at least see HTTP error code)
-- Array add/remove operation supported but it cannot be in the same operation as document update. It is by `ArrayAppendAsync` and `ArrayRemoveAsync`. (The real API would be via `UpdateAsync` the same as document field updating.)
-- Server time sentinel value supported but only one level. You can put `[ServerTimestamp]` attribute on any `DateTime` field that is on the **top level** of your data to write/create and it will ask the server to put a timestamp there via `DocumentTransform` REST API of `commit` command. (The top level requirement is because I am just too lazy to make it drill down and find every attributes..) See other sentinel values that are not supported, but should be in the real SDK : https://github.com/googleapis/google-cloud-dotnet/blob/master/apis/Google.Cloud.Firestore/Google.Cloud.Firestore/FieldValue.cs
+- Array add/remove field transform supported but it cannot be in the same operation as document update. It is by `ArrayAppendAsync` and `ArrayRemoveAsync`. (The real API would be via `UpdateAsync` the same as document field updating.)
+- Server time sentinel value field transform supported but only one level. You can put `[ServerTimestamp]` attribute on any `DateTime` field that is on the **top level** of your data to write/create and it will ask the server to put a timestamp there via `DocumentTransform` REST API of `commit` command. (The top level requirement is because I am just too lazy to make it drill down and find every attributes..) See other sentinel values that are not supported, but should be in the real SDK : https://github.com/googleapis/google-cloud-dotnet/blob/master/apis/Google.Cloud.Firestore/Google.Cloud.Firestore/FieldValue.cs
 
 ## How to use
 

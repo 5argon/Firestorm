@@ -29,28 +29,28 @@ namespace E7.Firebase
 
         public async Task UpdateAsync<T>(T documentDataToSet) where T : class
         {
-            await DocumentOpsInternal<T>(documentDataToSet, SetOption.MergeAll);
+            await DocumentOpsInternal(documentDataToSet, SetOption.MergeAll);
         }
 
         public async Task SetAsync<T>(T documentDataToSet) where T : class
         {
-            await DocumentOpsInternal<T>(documentDataToSet, SetOption.Overwrite);
+            await DocumentOpsInternal(documentDataToSet, SetOption.Overwrite);
         }
 
         /// <summary>
         /// If that value already exist in an array, it won't be added.
         /// </summary>
-        public async Task ArrayAppendAsync<T>(string arrayFieldName, object[] toAdd) where T : class
+        public async Task ArrayAppendAsync(string arrayFieldName, object[] toAdd) 
         {
-            await DocumentOpsInternal<T>(null, SetOption.ArrayAdd, (arrayFieldName, toAdd));
+            await DocumentOpsInternal(null, SetOption.ArrayAdd, (arrayFieldName, toAdd));
         }
 
         /// <summary>
         /// If that value does not exist in an array, nothing would happen 
         /// </summary>
-        public async Task ArrayRemoveAsync<T>(string arrayFieldName, object[] toAdd) where T : class
+        public async Task ArrayRemoveAsync(string arrayFieldName, object[] toAdd) 
         {
-            await DocumentOpsInternal<T>(null, SetOption.ArrayRemove, (arrayFieldName, toAdd));
+            await DocumentOpsInternal(null, SetOption.ArrayRemove, (arrayFieldName, toAdd));
         }
 
         private class ArrayDataWrap
@@ -61,26 +61,31 @@ namespace E7.Firebase
         /// <summary>
         /// The clusterfuck
         /// </summary>
-        private async Task DocumentOpsInternal<T>(T documentDataToSet, SetOption setOption, (string fieldPath, object[] objs) arrayOperation = default) where T : class
+        private async Task DocumentOpsInternal(object documentDataToSet, SetOption setOption, (string fieldPath, object[] objs) arrayOperation = default) 
         {
             CommitUpdate commit = null;
 
             //Build a path for commit. Works both if it is a new document or existing document because we are using `commit` API and not `createDocument` / `patch`.
             string documentPath = $"{FirestormConfig.Instance.DocumentPathFromProjects}{stringBuilder.ToString()}";
 
-            //Add a server time sentinel value support. Scans only top level fields because I am lazy
-            var fieldsWithTimestampSentinel = typeof(T).GetFields().Where(x => x.GetCustomAttributes(typeof(ServerTimestamp), inherit: false).Length != 0).Select(x => x.Name);
-
-            FieldTransformTimestamp[] timestampFieldTransforms = fieldsWithTimestampSentinel.Select(x => new FieldTransformTimestamp { fieldPath = x, setToServerValue = ServerValue.REQUEST_TIME }).ToArray();
-
-            var writeTransformTimestamp = new WriteTransform
+            FieldTransformTimestamp[] timestampFieldTransforms = null;
+            WriteTransform writeTransformTimestamp = null;
+            if (documentDataToSet != null)
             {
-                transform = new DocumentTransform
+                //Add a server time sentinel value support. Scans only top level fields because I am lazy
+                var fieldsWithTimestampSentinel = documentDataToSet.GetType().GetFields().Where(x => x.GetCustomAttributes(typeof(ServerTimestamp), inherit: false).Length != 0).Select(x => x.Name);
+
+                timestampFieldTransforms = fieldsWithTimestampSentinel.Select(x => new FieldTransformTimestamp { fieldPath = x, setToServerValue = ServerValue.REQUEST_TIME }).ToArray();
+
+                writeTransformTimestamp = new WriteTransform
                 {
-                    document = documentPath,
-                    fieldTransforms = timestampFieldTransforms
-                }
-            };
+                    transform = new DocumentTransform
+                    {
+                        document = documentPath,
+                        fieldTransforms = timestampFieldTransforms
+                    }
+                };
+            }
 
             if (arrayOperation != default)
             {
@@ -121,7 +126,7 @@ namespace E7.Firebase
 
                 commit = new CommitUpdate
                 {
-                    writes = timestampFieldTransforms.Length == 0 ? new WriteTransform[] { writeTransformArray } : new WriteTransform[] { writeTransformArray, writeTransformTimestamp },
+                    writes = (timestampFieldTransforms != null && timestampFieldTransforms.Length == 0) ? new WriteTransform[] { writeTransformArray } : new WriteTransform[] { writeTransformArray, writeTransformTimestamp },
                 };
             }
             else
@@ -179,7 +184,7 @@ namespace E7.Firebase
                 };
                 commit = new CommitUpdate
                 {
-                    writes = timestampFieldTransforms.Length == 0 ? new WriteUpdate[] { writeUpdate } : new IWrite[] { writeUpdate, writeTransformTimestamp },
+                    writes = (timestampFieldTransforms != null && timestampFieldTransforms.Length == 0) ? new WriteUpdate[] { writeUpdate } : new IWrite[] { writeUpdate, writeTransformTimestamp },
                 };
             }
 

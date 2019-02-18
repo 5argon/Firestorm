@@ -10,23 +10,41 @@ using System.Collections;
 
 using Yo = System.Collections.Generic.Dictionary<string, object>;
 
-namespace FirestormTest
+namespace FirestormTesto
 {
     public class JsonTest : FirestormTestDataStructure
     {
-        private class ArrayDataWrap
-        {
-            public List<object> data;
-        }
-        [Test]
-        public void JArray()
-        {
-            var json = FirestormUtility.ToJsonDocument(new ArrayDataWrap { data = new object[] { 11, "hi", false }.ToList() }, "");
-            //clusterfuck of drill down lol
-            var valuesAndArrayData = (JsonData)((Dictionary<string, object>)new FirestormDocumentSnapshot(json).Document.fields.First().Value.First().Value).First().Value;
-            Debug.Log($"{ valuesAndArrayData.UnderlyingPrimitive().GetType().Name}");
-            var casted = (List<JsonData>)valuesAndArrayData.UnderlyingPrimitive();
-        }
+//         public class PlayerInfoDownload
+//         {
+//             public string uid;
+//             public string shortId;
+//             public bool searchable;
+//             public bool openAsRival;
+//             public bool globalScore;
+//             public bool publicProfile;
+//             [ServerTimestamp] public DateTime updateTime;
+//             public List<object> addedAsRival;
+//         }
+
+//         [Test]
+//         public void Why()
+//         {
+//             var js = @"
+// {
+//     ""publicProfile"" : true,
+//     ""openAsRival""   : true,
+//     ""addedAsRival""  : [
+//         ""mXyrnWOXMvdshTyx8c8Igkz63SG2""
+//     ],
+//     ""searchable""    : true,
+//     ""updateTime""       : ""2019-02-14T15:52:16.069Z"",
+//     ""shortId""          : ""BIBYZ"",
+//     ""uid""              : ""BiByzq3ra9UCSNG352IDMzZYTTh1"",
+//     ""globalScore""      : true
+// }
+//             ";
+//             var doc = JsonMapper.ToObject<PlayerInfoDownload>(js);
+//         }
 
 
         [Test]

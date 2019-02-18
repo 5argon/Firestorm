@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using E7.Firebase;
 
-namespace FirestormTest
+namespace FirestormTesto
 {
     public class FirestormTestBase : FirestormTestDataStructure
     {

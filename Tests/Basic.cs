@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.TestTools;
 
-namespace FirestormTest
+namespace FirestormTesto
 {
 
     public class Basic

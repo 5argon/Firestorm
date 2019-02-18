@@ -451,7 +451,7 @@ namespace E7.Firebase.LitJson
                         break;
 
                     string property = (string) reader.Value;
-                    //UnityEngine.Debug.Log($"Prop {property}");
+                    //UnityEngine.Debug.Log($"Prop {property} Just created {value_type.Name}");
 
                     if (t_data.Properties.ContainsKey (property)) {
                         PropertyMetadata prop_data =

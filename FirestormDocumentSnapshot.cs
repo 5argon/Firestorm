@@ -40,6 +40,7 @@ namespace E7.Firebase
             }
 
             //Leave it to LitJSON, we have formatted the json to be ready for convert.
+            //Debug.Log($"Conversion! {formattedDataJson}");
             return JsonMapper.ToObject<T>(formattedDataJson);
         }
 

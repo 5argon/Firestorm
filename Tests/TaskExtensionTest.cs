@@ -3,7 +3,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
-namespace FirestormTest
+namespace FirestormTesto
 {
     public static class TaskExtensionTest
     {

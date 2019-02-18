@@ -7,7 +7,7 @@ using E7.Firebase;
 using UnityEngine.Networking;
 using System.Reflection;
 
-namespace FirestormTest
+namespace FirestormTesto
 {
     public class MetaOperationTest : FirestormTestBase
     {

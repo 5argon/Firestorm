@@ -8,7 +8,7 @@ using System;
 using E7.Firebase;
 using System.Linq;
 
-namespace FirestormTest
+namespace FirestormTesto
 {
 
     public class DocumentOperationTest : FirestormTestBase
@@ -434,7 +434,7 @@ namespace FirestormTest
                     array3 = new List<object> { 66 , "wow" },
                 };
                 await TestDocument1.SetAsync<TestArray>(ta);
-                await TestDocument1.ArrayAppendAsync<TestArray>("array2", new object[] { 55, 555 });
+                await TestDocument1.ArrayAppendAsync("array2", new object[] { 55, 555 });
                 var returned = (await TestDocument1.GetSnapshotAsync()).ConvertTo<TestArray>();
 
                 Assert.That(returned.array1.Count, Is.EqualTo(2));
@@ -446,14 +446,14 @@ namespace FirestormTest
                 Assert.That(returned.array2[2], Is.EqualTo(55));
                 Assert.That(returned.array2[3], Is.EqualTo(555));
 
-                await TestDocument1.ArrayAppendAsync<TestArray>("array2", new object[] { 666 });
+                await TestDocument1.ArrayAppendAsync("array2", new object[] { 666 });
                 returned = (await TestDocument1.GetSnapshotAsync()).ConvertTo<TestArray>();
 
                 Assert.That(returned.array2.Count, Is.EqualTo(5));
                 Assert.That(returned.array2[3], Is.EqualTo(555));
                 Assert.That(returned.array2[4], Is.EqualTo(666));
 
-                await TestDocument1.ArrayAppendAsync<TestArray>("array2", new object[] { 666 });
+                await TestDocument1.ArrayAppendAsync("array2", new object[] { 666 });
                 returned = (await TestDocument1.GetSnapshotAsync()).ConvertTo<TestArray>();
 
                 Assert.That(returned.array2.Count, Is.EqualTo(5));
@@ -473,7 +473,7 @@ namespace FirestormTest
                     array3 = new List<object> { 66 , "wow" },
                 };
                 await TestDocument1.SetAsync<TestArray>(ta);
-                await TestDocument1.ArrayRemoveAsync<TestArray>("array2", new object[] { 66, 77 });
+                await TestDocument1.ArrayRemoveAsync("array2", new object[] { 66, 77 });
                 var returned = (await TestDocument1.GetSnapshotAsync()).ConvertTo<TestArray>();
 
                 Assert.That(returned.array1.Count, Is.EqualTo(2));
@@ -485,7 +485,7 @@ namespace FirestormTest
                 Assert.That(returned.array2[2], Is.EqualTo(55));
                 Assert.That(returned.array2[3], Is.EqualTo(88));
 
-                await TestDocument1.ArrayRemoveAsync<TestArray>("array2", new object[] { 555555 });
+                await TestDocument1.ArrayRemoveAsync("array2", new object[] { 555555 });
                 returned = (await TestDocument1.GetSnapshotAsync()).ConvertTo<TestArray>();
 
                 Assert.That(returned.array2.Count, Is.EqualTo(4), "Removing something that is not in array cause nothing.");
