@@ -25,6 +25,18 @@ namespace E7.Firebase
             this.documentName = name;
         }
 
+        public FirestormDocumentReference(string fullName)
+        {
+            this.stringBuilder = new StringBuilder();
+            this.stringBuilder.Append(fullName);
+
+            var split = fullName.Split('/');
+            var exceptLastOne = split.Take(split.Length - 1);
+
+            this.documentName = split[split.Length-1];
+            this.parent = string.Join("/", exceptLastOne);
+        }
+
         public FirestormCollectionReference Collection(string name) => new FirestormCollectionReference(this, name);
 
         public async Task UpdateAsync<T>(T documentDataToSet) where T : class

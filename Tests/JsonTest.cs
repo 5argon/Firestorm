@@ -14,43 +14,54 @@ namespace FirestormTesto
 {
     public class JsonTest : FirestormTestDataStructure
     {
-//         public class PlayerInfoDownload
-//         {
-//             public string uid;
-//             public string shortId;
-//             public bool searchable;
-//             public bool openAsRival;
-//             public bool globalScore;
-//             public bool publicProfile;
-//             [ServerTimestamp] public DateTime updateTime;
-//             public List<object> addedAsRival;
-//         }
 
-//         [Test]
-//         public void Why()
-//         {
-//             var js = @"
-// {
-//     ""publicProfile"" : true,
-//     ""openAsRival""   : true,
-//     ""addedAsRival""  : [
-//         ""mXyrnWOXMvdshTyx8c8Igkz63SG2""
-//     ],
-//     ""searchable""    : true,
-//     ""updateTime""       : ""2019-02-14T15:52:16.069Z"",
-//     ""shortId""          : ""BIBYZ"",
-//     ""uid""              : ""BiByzq3ra9UCSNG352IDMzZYTTh1"",
-//     ""globalScore""      : true
-// }
-//             ";
-//             var doc = JsonMapper.ToObject<PlayerInfoDownload>(js);
-//         }
+        private class TooManyFields
+        {
+            public string uid;
+            public string shortId;
+            public bool searchable;
+            public bool openAsRival;
+            public bool globalScore;
+            public bool publicProfile;
+            public DateTime updateTime;
+            public List<object> addedAsRival;
+        }
 
+        [Test]
+        public void TooManyFieldsLeftDefault()
+        {
+
+        string lessValues = @"
+    {
+      ""name"": ""projects/firestrike5555/databases/(default)/documents/my-collection/my-doc"",
+      ""fields"": {
+        ""typeNumber"": {
+          ""doubleValue"": 12.34
+        },
+        ""typeBoolean"": {
+          ""booleanValue"": true
+        }
+      },
+      ""createTime"": ""2019-01-26T10:18:04.978706Z"",
+      ""updateTime"": ""2019-01-28T12:45:25.496931Z""
+    }
+        ";
+            var doc = new FirestormDocumentSnapshot(lessValues);
+            var getBack = doc.ConvertTo<TestStruct>();
+            Assert.That(getBack.typeString, Is.Null);
+            Assert.That(getBack.typeArray, Is.Null);
+            Assert.That(getBack.typeMap, Is.Null);
+        }
 
         [Test]
         public void LitJsonHandlesSupportedType()
         {
-            var doc = JsonMapper.ToObject<FirestormDocument>(sampleDocumentJson);
+            JsonReader specialReader = new JsonReader(sampleDocumentJson)
+            {
+                ObjectAsDictString = true
+            };
+
+            var doc = JsonMapper.ToObject<FirestormDocument>(specialReader);
 
             Assert.That(doc.createTime.Year, Is.EqualTo(2019));
             Assert.That(doc.createTime.Month, Is.EqualTo(1));

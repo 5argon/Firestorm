@@ -72,6 +72,11 @@ namespace E7.Firebase.LitJson
             set { lexer.AllowSingleQuotedStrings = value; }
         }
 
+        /// <summary>
+        /// 5argon : This mod is to make infinitely deep JSON be read as infinitely deep `Dictionary<string,object>` chain instead of skipped by LitJson because of `Object` type.
+        /// </summary>
+        public bool ObjectAsDictString { get; set; }
+
         public bool SkipNonMembers {
             get { return skip_non_members; }
             set { skip_non_members = value; }

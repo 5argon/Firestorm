@@ -82,7 +82,7 @@ I made this just enough to adopt Firestore as soon as possible. Features are at 
 
 - Type excluded in a Document : Map inside a map (Map = dictionary of JSON not map as in world map), Geopoint (LatLng), Map for 1 level in a document is fine.
 - Any mentioned types that is in an array. Basically, recursive programming is hard and I don't want to mess with it + my game does not have nested map design. But hey! Array is implemented! A friend list per player for example can be strings in an array.
-- Receiving type must be a `class` with all public fields name matching names from Firestore **exactly**, no missing fields, no unused fields. (It can't even be a property, see the unity test.) On getting component you must provide a concrete **type generic** with all fields known except `List<object>` which is used to receive Firestore array. It must be a `class` because it would be easy to do reflection to populate its value. It will be reflected by field name of the document to match with what's in your type
+- Upload and download must be performed from a concretely defined class. Class receiving downloaded data can have more fields than the incoming data and those will be left at default, but cannot have missing field or it would be an error.
 - Transaction not supported. (Used for atomic operation that rolls back together when one thing fails)
 - Manual rollback not supported. (There is actually a REST endpoint for this, but too difficult to bother)
 - Batched write not supported.

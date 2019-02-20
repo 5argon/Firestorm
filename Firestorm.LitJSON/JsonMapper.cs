@@ -25,8 +25,8 @@ namespace E7.Firebase.LitJson
     internal struct PropertyMetadata
     {
         public MemberInfo Info;
-        public bool       IsField;
-        public Type       Type;
+        public bool IsField;
+        public Type Type;
     }
 
 
@@ -37,10 +37,12 @@ namespace E7.Firebase.LitJson
         private bool is_list;
 
 
-        public Type ElementType {
-            get {
+        public Type ElementType
+        {
+            get
+            {
                 if (element_type == null)
-                    return typeof (JsonData);
+                    return typeof(JsonData);
 
                 return element_type;
             }
@@ -48,12 +50,14 @@ namespace E7.Firebase.LitJson
             set { element_type = value; }
         }
 
-        public bool IsArray {
+        public bool IsArray
+        {
             get { return is_array; }
             set { is_array = value; }
         }
 
-        public bool IsList {
+        public bool IsList
+        {
             get { return is_list; }
             set { is_list = value; }
         }
@@ -68,10 +72,12 @@ namespace E7.Firebase.LitJson
         private IDictionary<string, PropertyMetadata> properties;
 
 
-        public Type ElementType {
-            get {
+        public Type ElementType
+        {
+            get
+            {
                 if (element_type == null)
-                    return typeof (JsonData);
+                    return typeof(JsonData);
 
                 return element_type;
             }
@@ -79,25 +85,27 @@ namespace E7.Firebase.LitJson
             set { element_type = value; }
         }
 
-        public bool IsDictionary {
+        public bool IsDictionary
+        {
             get { return is_dictionary; }
             set { is_dictionary = value; }
         }
 
-        public IDictionary<string, PropertyMetadata> Properties {
+        public IDictionary<string, PropertyMetadata> Properties
+        {
             get { return properties; }
             set { properties = value; }
         }
     }
 
 
-    internal delegate void ExporterFunc    (object obj, JsonWriter writer);
-    public   delegate void ExporterFunc<T> (T obj, JsonWriter writer);
+    internal delegate void ExporterFunc(object obj, JsonWriter writer);
+    public delegate void ExporterFunc<T>(T obj, JsonWriter writer);
 
-    internal delegate object ImporterFunc                (object input);
-    public   delegate TValue ImporterFunc<TJson, TValue> (TJson input);
+    internal delegate object ImporterFunc(object input);
+    public delegate TValue ImporterFunc<TJson, TValue>(TJson input);
 
-    public delegate IJsonWrapper WrapperFactory ();
+    public delegate IJsonWrapper WrapperFactory();
 
 
     public class JsonMapper
@@ -116,189 +124,212 @@ namespace E7.Firebase.LitJson
                 IDictionary<Type, ImporterFunc>> custom_importers_table;
 
         private static readonly IDictionary<Type, ArrayMetadata> array_metadata;
-        private static readonly object array_metadata_lock = new Object ();
+        private static readonly object array_metadata_lock = new Object();
 
         private static readonly IDictionary<Type,
                 IDictionary<Type, MethodInfo>> conv_ops;
-        private static readonly object conv_ops_lock = new Object ();
+        private static readonly object conv_ops_lock = new Object();
 
         private static readonly IDictionary<Type, ObjectMetadata> object_metadata;
-        private static readonly object object_metadata_lock = new Object ();
+        private static readonly object object_metadata_lock = new Object();
 
         private static readonly IDictionary<Type,
                 IList<PropertyMetadata>> type_properties;
-        private static readonly object type_properties_lock = new Object ();
+        private static readonly object type_properties_lock = new Object();
 
-        private static readonly JsonWriter      static_writer;
-        private static readonly object static_writer_lock = new Object ();
+        private static readonly JsonWriter static_writer;
+        private static readonly object static_writer_lock = new Object();
         #endregion
 
 
         #region Constructors
-        static JsonMapper ()
+        static JsonMapper()
         {
             max_nesting_depth = 100;
 
-            array_metadata = new Dictionary<Type, ArrayMetadata> ();
-            conv_ops = new Dictionary<Type, IDictionary<Type, MethodInfo>> ();
-            object_metadata = new Dictionary<Type, ObjectMetadata> ();
+            array_metadata = new Dictionary<Type, ArrayMetadata>();
+            conv_ops = new Dictionary<Type, IDictionary<Type, MethodInfo>>();
+            object_metadata = new Dictionary<Type, ObjectMetadata>();
             type_properties = new Dictionary<Type,
-                            IList<PropertyMetadata>> ();
+                            IList<PropertyMetadata>>();
 
-            static_writer = new JsonWriter ();
+            static_writer = new JsonWriter();
 
             datetime_format = DateTimeFormatInfo.CurrentInfo;
 
-            base_exporters_table   = new Dictionary<Type, ExporterFunc> ();
-            custom_exporters_table = new Dictionary<Type, ExporterFunc> ();
+            base_exporters_table = new Dictionary<Type, ExporterFunc>();
+            custom_exporters_table = new Dictionary<Type, ExporterFunc>();
 
             base_importers_table = new Dictionary<Type,
-                                 IDictionary<Type, ImporterFunc>> ();
+                                 IDictionary<Type, ImporterFunc>>();
             custom_importers_table = new Dictionary<Type,
-                                   IDictionary<Type, ImporterFunc>> ();
+                                   IDictionary<Type, ImporterFunc>>();
 
-            RegisterBaseExporters ();
-            RegisterBaseImporters ();
+            RegisterBaseExporters();
+            RegisterBaseImporters();
         }
         #endregion
 
 
         #region Private Methods
-        private static void AddArrayMetadata (Type type)
+        private static void AddArrayMetadata(Type type)
         {
-            if (array_metadata.ContainsKey (type))
+            if (array_metadata.ContainsKey(type))
                 return;
 
-            ArrayMetadata data = new ArrayMetadata ();
+            ArrayMetadata data = new ArrayMetadata();
 
             data.IsArray = type.IsArray;
 
-            if (type.GetInterface ("System.Collections.IList") != null)
+            if (type.GetInterface("System.Collections.IList") != null)
                 data.IsList = true;
 
-            foreach (PropertyInfo p_info in type.GetProperties ()) {
+            foreach (PropertyInfo p_info in type.GetProperties())
+            {
                 if (p_info.Name != "Item")
                     continue;
 
-                ParameterInfo[] parameters = p_info.GetIndexParameters ();
+                ParameterInfo[] parameters = p_info.GetIndexParameters();
 
                 if (parameters.Length != 1)
                     continue;
 
-                if (parameters[0].ParameterType == typeof (int))
+                if (parameters[0].ParameterType == typeof(int))
                     data.ElementType = p_info.PropertyType;
             }
 
-            lock (array_metadata_lock) {
-                try {
-                    array_metadata.Add (type, data);
-                } catch (ArgumentException) {
+            lock (array_metadata_lock)
+            {
+                try
+                {
+                    array_metadata.Add(type, data);
+                }
+                catch (ArgumentException)
+                {
                     return;
                 }
             }
         }
 
-        private static void AddObjectMetadata (Type type)
+        private static void AddObjectMetadata(Type type)
         {
-            if (object_metadata.ContainsKey (type))
+            if (object_metadata.ContainsKey(type))
                 return;
 
-            ObjectMetadata data = new ObjectMetadata ();
+            ObjectMetadata data = new ObjectMetadata();
 
-            if (type.GetInterface ("System.Collections.IDictionary") != null)
+            if (type.GetInterface("System.Collections.IDictionary") != null)
                 data.IsDictionary = true;
 
-            data.Properties = new Dictionary<string, PropertyMetadata> ();
+            data.Properties = new Dictionary<string, PropertyMetadata>();
 
-            foreach (PropertyInfo p_info in type.GetProperties ()) {
-                if (p_info.Name == "Item") {
-                    ParameterInfo[] parameters = p_info.GetIndexParameters ();
+            foreach (PropertyInfo p_info in type.GetProperties())
+            {
+                if (p_info.Name == "Item")
+                {
+                    ParameterInfo[] parameters = p_info.GetIndexParameters();
 
                     if (parameters.Length != 1)
                         continue;
 
-                    if (parameters[0].ParameterType == typeof (string))
+                    if (parameters[0].ParameterType == typeof(string))
                         data.ElementType = p_info.PropertyType;
 
                     continue;
                 }
 
-                PropertyMetadata p_data = new PropertyMetadata ();
+                PropertyMetadata p_data = new PropertyMetadata();
                 p_data.Info = p_info;
                 p_data.Type = p_info.PropertyType;
 
-                data.Properties.Add (p_info.Name, p_data);
+                data.Properties.Add(p_info.Name, p_data);
             }
 
-            foreach (FieldInfo f_info in type.GetFields ()) {
-                PropertyMetadata p_data = new PropertyMetadata ();
+            foreach (FieldInfo f_info in type.GetFields())
+            {
+                PropertyMetadata p_data = new PropertyMetadata();
                 p_data.Info = f_info;
                 p_data.IsField = true;
                 p_data.Type = f_info.FieldType;
 
-                data.Properties.Add (f_info.Name, p_data);
+                data.Properties.Add(f_info.Name, p_data);
             }
 
-            lock (object_metadata_lock) {
-                try {
-                    object_metadata.Add (type, data);
-                } catch (ArgumentException) {
+            lock (object_metadata_lock)
+            {
+                try
+                {
+                    object_metadata.Add(type, data);
+                }
+                catch (ArgumentException)
+                {
                     return;
                 }
             }
         }
 
-        private static void AddTypeProperties (Type type)
+        private static void AddTypeProperties(Type type)
         {
-            if (type_properties.ContainsKey (type))
+            if (type_properties.ContainsKey(type))
                 return;
 
-            IList<PropertyMetadata> props = new List<PropertyMetadata> ();
+            IList<PropertyMetadata> props = new List<PropertyMetadata>();
 
-            foreach (PropertyInfo p_info in type.GetProperties ()) {
+            foreach (PropertyInfo p_info in type.GetProperties())
+            {
                 if (p_info.Name == "Item")
                     continue;
 
-                PropertyMetadata p_data = new PropertyMetadata ();
+                PropertyMetadata p_data = new PropertyMetadata();
                 p_data.Info = p_info;
                 p_data.IsField = false;
-                props.Add (p_data);
+                props.Add(p_data);
             }
 
-            foreach (FieldInfo f_info in type.GetFields ()) {
-                PropertyMetadata p_data = new PropertyMetadata ();
+            foreach (FieldInfo f_info in type.GetFields())
+            {
+                PropertyMetadata p_data = new PropertyMetadata();
                 p_data.Info = f_info;
                 p_data.IsField = true;
 
-                props.Add (p_data);
+                props.Add(p_data);
             }
 
-            lock (type_properties_lock) {
-                try {
-                    type_properties.Add (type, props);
-                } catch (ArgumentException) {
+            lock (type_properties_lock)
+            {
+                try
+                {
+                    type_properties.Add(type, props);
+                }
+                catch (ArgumentException)
+                {
                     return;
                 }
             }
         }
 
-        private static MethodInfo GetConvOp (Type t1, Type t2)
+        private static MethodInfo GetConvOp(Type t1, Type t2)
         {
-            lock (conv_ops_lock) {
-                if (! conv_ops.ContainsKey (t1))
-                    conv_ops.Add (t1, new Dictionary<Type, MethodInfo> ());
+            lock (conv_ops_lock)
+            {
+                if (!conv_ops.ContainsKey(t1))
+                    conv_ops.Add(t1, new Dictionary<Type, MethodInfo>());
             }
 
-            if (conv_ops[t1].ContainsKey (t2))
+            if (conv_ops[t1].ContainsKey(t2))
                 return conv_ops[t1][t2];
 
-            MethodInfo op = t1.GetMethod (
+            MethodInfo op = t1.GetMethod(
                 "op_Implicit", new Type[] { t2 });
 
-            lock (conv_ops_lock) {
-                try {
-                    conv_ops[t1].Add (t2, op);
-                } catch (ArgumentException) {
+            lock (conv_ops_lock)
+            {
+                try
+                {
+                    conv_ops[t1].Add(t2, op);
+                }
+                catch (ArgumentException)
+                {
                     return conv_ops[t1][t2];
                 }
             }
@@ -306,10 +337,10 @@ namespace E7.Firebase.LitJson
             return op;
         }
 
-        private static object ReadValue (Type inst_type, JsonReader reader)
+        private static object ReadValue(Type inst_type, JsonReader reader)
         {
-            //UnityEngine.Debug.Log($"Reading {inst_type.Name} {reader.Token} {reader.Value}");
-            reader.Read ();
+            reader.Read();
+           //UnityEngine.Debug.Log($"Reading {inst_type.Name} {reader.Token} {reader.Value}");
 
             if (reader.Token == JsonToken.ArrayEnd)
                 return null;
@@ -317,18 +348,20 @@ namespace E7.Firebase.LitJson
             Type underlying_type = Nullable.GetUnderlyingType(inst_type);
             Type value_type = underlying_type ?? inst_type;
 
-            if (reader.Token == JsonToken.Null) {
-                #if NETSTANDARD1_5
+            if (reader.Token == JsonToken.Null)
+            {
+#if NETSTANDARD1_5
                 if (inst_type.IsClass() || underlying_type != null) {
                     return null;
                 }
-                #else
-                if (inst_type.IsClass || underlying_type != null) {
+#else
+                if (inst_type.IsClass || underlying_type != null)
+                {
                     return null;
                 }
-                #endif
+#endif
 
-                throw new JsonException (String.Format (
+                throw new JsonException(String.Format(
                             "Can't assign null to an instance of type {0}",
                             inst_type));
             }
@@ -337,167 +370,222 @@ namespace E7.Firebase.LitJson
                 reader.Token == JsonToken.Int ||
                 reader.Token == JsonToken.Long ||
                 reader.Token == JsonToken.String ||
-                reader.Token == JsonToken.Boolean) {
+                reader.Token == JsonToken.Boolean)
+            {
 
-                Type json_type = reader.Value.GetType ();
-                //UnityEngine.Debug.Log($"TYPE {json_type.Name} {underlying_type?.Name} {value_type?.Name}");
+                Type json_type = reader.Value.GetType();
+               //UnityEngine.Debug.Log($"TYPE {json_type.Name} {underlying_type?.Name} {value_type?.Name}");
 
-                if (value_type.IsAssignableFrom (json_type))
+                if (value_type.IsAssignableFrom(json_type))
                 {
                     //If the value side is object then it come here also
                     return reader.Value;
                 }
 
                 // If there's a custom importer that fits, use it
-                if (custom_importers_table.ContainsKey (json_type) &&
-                    custom_importers_table[json_type].ContainsKey (
-                        value_type)) {
+                if (custom_importers_table.ContainsKey(json_type) &&
+                    custom_importers_table[json_type].ContainsKey(
+                        value_type))
+                {
 
                     ImporterFunc importer =
                         custom_importers_table[json_type][value_type];
 
-                    return importer (reader.Value);
+                    return importer(reader.Value);
                 }
 
                 // Maybe there's a base importer that works
-                if (base_importers_table.ContainsKey (json_type) &&
-                    base_importers_table[json_type].ContainsKey (
-                        value_type)) {
+                if (base_importers_table.ContainsKey(json_type) &&
+                    base_importers_table[json_type].ContainsKey(
+                        value_type))
+                {
 
                     ImporterFunc importer =
                         base_importers_table[json_type][value_type];
 
-                    return importer (reader.Value);
+                    return importer(reader.Value);
                 }
 
                 // Maybe it's an enum
-                #if NETSTANDARD1_5
+#if NETSTANDARD1_5
                 if (value_type.IsEnum())
                     return Enum.ToObject (value_type, reader.Value);
-                #else
+#else
                 if (value_type.IsEnum)
-                    return Enum.ToObject (value_type, reader.Value);
-                #endif
+                    return Enum.ToObject(value_type, reader.Value);
+#endif
                 // Try using an implicit conversion operator
-                MethodInfo conv_op = GetConvOp (value_type, json_type);
+                MethodInfo conv_op = GetConvOp(value_type, json_type);
 
                 if (conv_op != null)
                 {
-                    return conv_op.Invoke (null,
+                    return conv_op.Invoke(null,
                                            new object[] { reader.Value });
                 }
 
                 // No luck
-                throw new JsonException (String.Format (
+                throw new JsonException(String.Format(
                         "Can't assign value '{0}' (type {1}) to type {2}",
                         reader.Value, json_type, inst_type));
             }
 
             object instance = null;
 
-            if (reader.Token == JsonToken.ArrayStart) {
+            if (reader.Token == JsonToken.ArrayStart)
+            {
 
-                AddArrayMetadata (inst_type);
+                AddArrayMetadata(inst_type);
                 ArrayMetadata t_data = array_metadata[inst_type];
 
-                if (! t_data.IsArray && ! t_data.IsList)
-                    throw new JsonException (String.Format (
+                if (!t_data.IsArray && !t_data.IsList)
+                    throw new JsonException(String.Format(
                             "Type {0} can't act as an array",
                             inst_type));
 
                 IList list;
                 Type elem_type;
 
-                if (! t_data.IsArray) {
+                if (!t_data.IsArray)
+                {
                     //UnityEngine.Debug.Log($"OK ACT {inst_type.Name} {t_data.ElementType.Name}");
-                    list = (IList) Activator.CreateInstance (inst_type);
+                    list = (IList)Activator.CreateInstance(inst_type);
                     elem_type = t_data.ElementType;
-                } else {
+                }
+                else
+                {
                     //UnityEngine.Debug.Log("OK AL");
-                    list = new ArrayList ();
-                    elem_type = inst_type.GetElementType ();
+                    list = new ArrayList();
+                    elem_type = inst_type.GetElementType();
                 }
 
-                while (true) {
-                    object item = ReadValue (elem_type, reader);
+                while (true)
+                {
+                    object item = ReadValue(elem_type, reader);
                     if (item == null && reader.Token == JsonToken.ArrayEnd)
                         break;
 
-                    list.Add (item);
+                    list.Add(item);
                 }
 
                 //UnityEngine.Debug.Log($"--- FIN --- {list.GetType().Name}");
 
-                if (t_data.IsArray) {
+                if (t_data.IsArray)
+                {
                     //UnityEngine.Debug.Log("CRE");
                     int n = list.Count;
-                    instance = Array.CreateInstance (elem_type, n);
+                    instance = Array.CreateInstance(elem_type, n);
 
                     for (int i = 0; i < n; i++)
-                        ((Array) instance).SetValue (list[i], i);
-                } else
+                        ((Array)instance).SetValue(list[i], i);
+                }
+                else
                     instance = list;
 
-            } else if (reader.Token == JsonToken.ObjectStart) {
-                AddObjectMetadata (value_type);
+            }
+            else if (reader.Token == JsonToken.ObjectStart)
+            {
+                AddObjectMetadata(value_type);
                 ObjectMetadata t_data = object_metadata[value_type];
 
-                instance = Activator.CreateInstance (value_type);
+               //UnityEngine.Debug.Log($"Creating object instance of type {value_type.Name}");
 
-                while (true) {
-                    reader.Read ();
+                instance = Activator.CreateInstance(value_type);
+
+                while (true)
+                {
+                    reader.Read();
 
                     if (reader.Token == JsonToken.ObjectEnd)
                         break;
 
-                    string property = (string) reader.Value;
-                    //UnityEngine.Debug.Log($"Prop {property} Just created {value_type.Name}");
+                    string property = (string)reader.Value;
+                   //UnityEngine.Debug.Log($"Prop {property} Just created {value_type.Name} All keys {string.Join(" / ", t_data.Properties.Keys)}");
 
-                    if (t_data.Properties.ContainsKey (property)) {
+                    if (t_data.Properties.ContainsKey(property))
+                    {
                         PropertyMetadata prop_data =
                             t_data.Properties[property];
 
-                        if (prop_data.IsField) {
-                            //UnityEngine.Debug.Log($"FIELD {prop_data.Type.Name}");
-                            ((FieldInfo) prop_data.Info).SetValue (
-                                instance, ReadValue (prop_data.Type, reader));
-                        } else {
+                        if (prop_data.IsField)
+                        {
+                           //UnityEngine.Debug.Log($"FIELD {prop_data.Type.Name} setting to {instance.GetType().Name}");
+                            var readValue = ReadValue(prop_data.Type, reader);
+                           //UnityEngine.Debug.Log($"DONE READ {prop_data.Type.Name} setting to {instance.GetType().Name}");
+                            ((FieldInfo)prop_data.Info).SetValue(
+                                instance, readValue);
+                        }
+                        else
+                        {
                             PropertyInfo p_info =
-                                (PropertyInfo) prop_data.Info;
+                                (PropertyInfo)prop_data.Info;
 
                             if (p_info.CanWrite)
                             {
-                            //UnityEngine.Debug.Log($"PROP WRITE");
-                                p_info.SetValue (
+                               //UnityEngine.Debug.Log($"PROP WRITE");
+                                p_info.SetValue(
                                     instance,
-                                    ReadValue (prop_data.Type, reader),
+                                    ReadValue(prop_data.Type, reader),
                                     null);
                             }
                             else
                             {
-                            //UnityEngine.Debug.Log($"PROP");
-                                ReadValue (prop_data.Type, reader);
+                               //UnityEngine.Debug.Log($"PROP");
+                                ReadValue(prop_data.Type, reader);
                             }
                         }
 
-                    } else {
-                        if (! t_data.IsDictionary) {
-                            //Hack so object is a dictionary anyways! haha!
-                            if (! reader.SkipNonMembers) {
-                                throw new JsonException (String.Format (
+                        // } else {
+                        //     if (! t_data.IsDictionary) {
+                        //        //UnityEngine.Debug.Log($"Oh no! now dict! {value_type}");
+                        //         //Hack so object is a dictionary anyways! haha!
+                        //         if (! reader.SkipNonMembers) {
+                        //             throw new JsonException (String.Format (
+                        //                     "The type {0} doesn't have the " +
+                        //                     "property '{1}'",
+                        //                     inst_type, property));
+                        //         }
+                        //         instance = new Dictionary<string, object>();
+                        //         // } else {
+                        //         //    //UnityEngine.Debug.Log($"SKIP");
+                        //         //     ReadSkip (reader);
+                        //         //     continue;
+                        //         // }
+                        //     }
+                        //     var recursiveRead = ReadValue(t_data.ElementType, reader);
+                        //    //UnityEngine.Debug.Log($"IDICT Adding {property} {recursiveRead.GetType().Name}");
+                        //     ((IDictionary)instance).Add(property, recursiveRead);
+                        // }
+
+                    }
+                    else
+                    {
+                        if (!t_data.IsDictionary)
+                        {
+                           //UnityEngine.Debug.Log($"Oh no! Not dict! {value_type}");
+                            if (!reader.SkipNonMembers)
+                            {
+                                throw new JsonException(String.Format(
                                         "The type {0} doesn't have the " +
                                         "property '{1}'",
                                         inst_type, property));
                             }
-                            instance = new Dictionary<string, object>();
-                            // } else {
-                            //     UnityEngine.Debug.Log($"SKIP");
-                            //     ReadSkip (reader);
-                            //     continue;
-                            // }
+                            else
+                            {
+                                if (reader.ObjectAsDictString)
+                                {
+                                    instance = new Dictionary<string, object>();
+                                   //UnityEngine.Debug.Log($"Artificial! Dict!");
+                                }
+                                else
+                                {
+                                   //UnityEngine.Debug.Log($"- SKIPPED {property} {value_type}");
+                                    ReadSkip(reader);
+                                    continue;
+                                }
+                            }
                         }
+                       //UnityEngine.Debug.Log($"Yeah! Dict!");
                         var recursiveRead = ReadValue(t_data.ElementType, reader);
-                        //UnityEngine.Debug.Log($"IDICT Adding {property} {recursiveRead.GetType().Name}");
                         ((IDictionary)instance).Add(property, recursiveRead);
                     }
 

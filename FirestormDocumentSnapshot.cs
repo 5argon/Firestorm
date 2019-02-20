@@ -32,6 +32,11 @@ namespace E7.Firebase
             }
         }
 
+        /// <summary>
+        /// Create a document reference back from snapshot. Useful when you get snapshots from query and want to update back.
+        /// </summary>
+        public FirestormDocumentReference Reference => new FirestormDocumentReference(Name);
+
         public T ConvertTo<T>() where T : class
         {
             if (IsEmpty)
@@ -40,7 +45,7 @@ namespace E7.Firebase
             }
 
             //Leave it to LitJSON, we have formatted the json to be ready for convert.
-            //Debug.Log($"Conversion! {formattedDataJson}");
+            Debug.Log($"Conversion! {formattedDataJson}");
             return JsonMapper.ToObject<T>(formattedDataJson);
         }
 
@@ -78,7 +83,9 @@ namespace E7.Firebase
             //File.WriteAllText(Application.dataPath + $"/{UnityEngine.Random.Range(0, 100)}.txt", jsonString);
             IsEmpty = false;
 
-            this.document = JsonMapper.ToObject<FirestormDocument>(jsonString);
+            JsonReader specialReader = new JsonReader(jsonString);
+            specialReader.ObjectAsDictString = true;
+            this.document = JsonMapper.ToObject<FirestormDocument>(specialReader);
 
             //Write in a format that can be map to any object by (a modified) LitJSON
             var writer = new JsonWriter();
@@ -94,7 +101,7 @@ namespace E7.Firebase
             writer.WriteObjectEnd();
 
             formattedDataJson = writer.ToString();
-            //Debug.Log($"{formattedDataJson}");
+            Debug.Log($"Formatted {formattedDataJson}");
 
             void ValueTextToWrite(string valueText, object value)
             {
