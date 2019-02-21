@@ -114,16 +114,17 @@ namespace E7.Firebase
                 {
                     case "integerValue":
                         //Integer is dangerous because it came as string of number
-                        writer.Write(int.Parse((string)value));
+                        writer.Write(int.Parse(Convert.ToString(value)));
                         break;
                     case "doubleValue":
-                        writer.Write((double)value);
+                        //Debug.Log($"Hey! Casting {value.GetType().Name} !");
+                        writer.Write(Convert.ToDouble(value));
                         break;
                     case "booleanValue":
-                        writer.Write((bool)value);
+                        writer.Write(Convert.ToBoolean(value));
                         break;
                     case "bytesValue":
-                        writer.Write((string)value);
+                        writer.Write(Convert.ToString(value));
                         break;
                     case "arrayValue":
                         writer.WriteArrayStart();

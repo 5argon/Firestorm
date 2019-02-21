@@ -27,6 +27,8 @@ namespace E7.Firebase
 
         public FirestormDocumentReference(string fullName)
         {
+            fullName = fullName.Substring(fullName.IndexOf("documents") + "documents".Length);
+            //Debug.Log($"Ref from full name {fullName}");
             this.stringBuilder = new StringBuilder();
             this.stringBuilder.Append(fullName);
 
